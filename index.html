@@ -301,6 +301,8 @@
   }
   .recipe-card .rc-desc{font-size:13px; color:var(--ink-soft); line-height:1.4; margin-bottom:6px;}
   .recipe-card .rc-nutr{font-size:11.5px; color:var(--ink-soft);}
+  .recipe-card .rc-source{font-size:11px; color:var(--ink-soft); margin-top:4px; font-style:italic;}
+  .recipe-card .rc-source a{color:var(--basil); text-decoration:underline;}
   .fav-heart{
     flex-shrink:0; background:none; border:none; cursor:pointer;
     font-size:22px; line-height:1; padding:2px; color:var(--line);
@@ -1186,10 +1188,10 @@ const RECIPES = [
     desc:'Insalata mista con tonno e uova sode, un piatto unico semplice e nutriente.',
     tags:['insalata','tonno','pesce','uovo'],
     ing:[['Insalata mista','200','g','Produce'],['Tonno in scatola','160','g','Meat & Fish'],['Uova','3','pz','Dairy & Cheese'],['Pomodorini','200','g','Produce'],['Olio d\'oliva','30','ml','Pantry']]},
-  {id:'e56', name:'Manzo Freddo con Insalata e Pomodori', type:'weekend', category:'secondo', season:['all'],
-    desc:'Fettine di manzo lesso servite fredde con insalata fresca e pomodori, un secondo leggero e digeribile.',
-    tags:['manzo','carne','insalata','pomodoro'],
-    ing:[['Manzo lesso','300','g','Meat & Fish'],['Insalata mista','150','g','Produce'],['Pomodori','3','pz','Produce'],['Olio d\'oliva','30','ml','Pantry'],['Limone','1','pz','Produce']]},
+  {id:'e56', name:'Simmenthal con Insalata e Pomodori', type:'weekend', category:'secondo', season:['all'],
+    desc:'Simmenthal servito freddo con insalata fresca e pomodori, un secondo pronto in pochi minuti e digeribile.',
+    tags:['manzo','carne','insalata','pomodoro','simmenthal'],
+    ing:[['Simmenthal','300','g','Meat & Fish'],['Insalata mista','150','g','Produce'],['Pomodori','3','pz','Produce'],['Olio d\'oliva','30','ml','Pantry'],['Limone','1','pz','Produce']]},
   {id:'e57', name:'Polpettone di Tonno', type:'weekend', category:'secondo', season:['all'],
     desc:'Un polpettone freddo a base di tonno e patate, morbido e delicato, ottimo anche il giorno dopo.',
     tags:['tonno','pesce','uovo','patate'],
@@ -1248,6 +1250,209 @@ const RECIPES = [
     desc:'Pollo grigliato semplice, accompagnato da un\'insalata fresca: il secondo più leggero di tutti.',
     tags:['pollo','carne','insalata'],
     ing:[['Petto di pollo','500','g','Meat & Fish'],['Insalata mista','150','g','Produce'],['Limone','1','pz','Produce'],['Olio d\'oliva','20','ml','Pantry'],['Rosmarino','1','rametti','Produce']]},
+
+  // ---- WEEKDAY: ispirati a Fatto in casa da Benedetta e Cucchiaio d'Argento ----
+  {id:'w71', name:'Linguine al Pesto di Noci', type:'weekday', category:'pasta',
+    desc:'Un pesto cremoso di noci e parmigiano, alternativa golosa al classico basilico.',
+    tags:['noci','formaggio','vegetariano'],
+    ing:[['Linguine','320','g','Pantry'],['Noci','60','g','Pantry'],['Parmigiano','50','g','Dairy & Cheese'],['Aglio','1','spicchio','Produce'],['Olio d\'oliva','50','ml','Pantry']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricette/primi-piatti/'},
+  {id:'w72', name:'Pasta Cipolle e Mollica', type:'weekday', category:'pasta',
+    desc:'Cipolle stufate lentamente e mollica di pane tostata, un primo povero e saporito.',
+    tags:['cipolla','pane','vegetariano','semplice'],
+    ing:[['Spaghetti','320','g','Pantry'],['Cipolla','3','pz','Produce'],['Pane raffermo','80','g','Bread & Grains'],['Olio d\'oliva','40','ml','Pantry'],['Peperoncino in fiocchi','0.5','cucchiaini','Pantry']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricette/primi-piatti/'},
+  {id:'w73', name:'Spaghetti Burro, Alici e Pane Croccante', type:'weekday', category:'pasta',
+    desc:'Burro fuso e acciughe sciolte, con una manciata di pane croccante a dare consistenza.',
+    tags:['acciughe','pesce','semplice'],
+    ing:[['Spaghetti','320','g','Pantry'],['Burro','40','g','Dairy & Cheese'],['Filetti di acciughe','6','pz','Meat & Fish'],['Pangrattato','30','g','Pantry'],['Prezzemolo','1','mazzo','Produce']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricette/primi-piatti/'},
+  {id:'w74', name:'Pasta Fredda con Zucchine e Menta', type:'weekday', category:'pasta',
+    desc:'Zucchine saltate e menta fresca, un primo freddo profumato per le giornate calde.',
+    tags:['zucchine','vegetariano','semplice'],
+    ing:[['Fusilli','320','g','Pantry'],['Zucchine','3','pz','Produce'],['Menta','1','mazzo','Produce'],['Parmigiano','30','g','Dairy & Cheese'],['Olio d\'oliva','40','ml','Pantry']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricette/primi-piatti/veloci-primi-piatti/'},
+  {id:'w75', name:'Spaghetti alla Carbonara di Zucchine', type:'weekday', category:'pasta',
+    desc:'Una variante vegetariana della carbonara, con zucchine al posto del guanciale.',
+    tags:['zucchine','uovo','formaggio','vegetariano'],
+    ing:[['Spaghetti','320','g','Pantry'],['Zucchine','3','pz','Produce'],['Uova','3','pz','Dairy & Cheese'],['Pecorino Romano','50','g','Dairy & Cheese'],['Pepe nero','1','cucchiaini','Pantry']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricette/primi-piatti/veloci-primi-piatti/'},
+  {id:'w76', name:'Pasta Radicchio e Noci', type:'weekday', category:'pasta',
+    desc:'Radicchio appassito in padella con cipolla, panna e noci a pezzetti.',
+    tags:['radicchio','noci','cremoso','vegetariano'],
+    ing:[['Penne','320','g','Pantry'],['Radicchio','1','pz','Produce'],['Noci','40','g','Pantry'],['Panna','80','ml','Dairy & Cheese'],['Cipolla','0.5','pz','Produce']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricette/primi-piatti/veloci-primi-piatti/'},
+  {id:'w77', name:'Pasta al Pesto di Carote', type:'weekday', category:'pasta',
+    desc:'Un pesto insolito e dolce a base di carote, mandorle e parmigiano.',
+    tags:['carote','mandorle','formaggio','vegetariano'],
+    ing:[['Fusilli','320','g','Pantry'],['Carota','4','pz','Produce'],['Mandorle','40','g','Pantry'],['Parmigiano','40','g','Dairy & Cheese'],['Olio d\'oliva','50','ml','Pantry']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricettari/7-primi-piatti-light-facili-e-veloci/'},
+  {id:'w78', name:'Pasta con Avocado e Pomodorini Secchi', type:'weekday', category:'pasta',
+    desc:'Crema di avocado fresco e pomodorini secchi, un condimento moderno senza cottura.',
+    tags:['avocado','pomodoro','vegetariano'],
+    ing:[['Fusilli','320','g','Pantry'],['Avocado','2','pz','Produce'],['Pomodori secchi','60','g','Pantry'],['Limone','1','pz','Produce'],['Olio d\'oliva','30','ml','Pantry']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricettari/7-primi-piatti-light-facili-e-veloci/'},
+  {id:'w79', name:'Pasta alle Acciughe', type:'weekday', category:'pasta',
+    desc:'Acciughe sciolte con aglio e prezzemolo, pronta in dieci minuti.',
+    tags:['acciughe','pesce','semplice'],
+    ing:[['Spaghetti','320','g','Pantry'],['Filetti di acciughe','8','pz','Meat & Fish'],['Aglio','2','spicchi','Produce'],['Prezzemolo','1','mazzo','Produce'],['Olio d\'oliva','40','ml','Pantry']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricettari/primi-piatti-veloci/'},
+  {id:'w80', name:'Fusilli alle Olive', type:'weekday', category:'pasta',
+    desc:'Un sugo semplice di olive e pomodoro, pronto in un lampo.',
+    tags:['olive','pomodoro','vegetariano','semplice'],
+    ing:[['Fusilli','320','g','Pantry'],['Olive nere','80','g','Pantry'],['Pomodori pelati','300','g','Pantry'],['Aglio','2','spicchi','Produce'],['Origano','1','cucchiaini','Pantry']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricetta/tris-di-primi-facili-e-veloci/'},
+  {id:'w81', name:'Penne alla Diavola', type:'weekday', category:'pasta',
+    desc:'Pomodoro e peperoncino frantumato, un primo deciso e piccante.',
+    tags:['pomodoro','piccante','vegetariano'],
+    ing:[['Penne','320','g','Pantry'],['Pomodori pelati','400','g','Pantry'],['Peperoncino in fiocchi','1','cucchiaini','Pantry'],['Aglio','2','spicchi','Produce'],['Prezzemolo','1','mazzo','Produce']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricetta/tris-di-primi-facili-e-veloci/'},
+  {id:'w82', name:'Spaghetti alla Marinara', type:'weekday', category:'pasta',
+    desc:'Pomodoro, aglio e origano: il condimento più essenziale della cucina di mare.',
+    tags:['pomodoro','aglio','semplice','vegetariano'],
+    ing:[['Spaghetti','320','g','Pantry'],['Pomodori pelati','400','g','Pantry'],['Aglio','2','spicchi','Produce'],['Origano','1','cucchiaini','Pantry'],['Olio d\'oliva','40','ml','Pantry']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricetta/tris-di-primi-facili-e-veloci/'},
+  {id:'w83', name:'Pasta con Crema di Pistacchio e Stracciatella', type:'weekday', category:'pasta',
+    desc:'Crema di pistacchio e stracciatella filante, un primo goloso e sorprendente.',
+    tags:['pistacchio','formaggio','cremoso','vegetariano'],
+    ing:[['Fusilli','320','g','Pantry'],['Crema di pistacchio','60','g','Pantry'],['Stracciatella','150','g','Dairy & Cheese'],['Parmigiano','30','g','Dairy & Cheese'],['Olio d\'oliva','20','ml','Pantry']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricettari/primi-piatti-veloci/'},
+  {id:'w84', name:'Penne alla Provola', type:'weekday', category:'pasta',
+    desc:'Provola filante e pomodoro fresco, un primo espresso che piace a tutta la famiglia.',
+    tags:['formaggio','pomodoro','vegetariano'],
+    ing:[['Penne','320','g','Pantry'],['Provola','150','g','Dairy & Cheese'],['Pomodorini','300','g','Produce'],['Basilico','1','mazzo','Produce'],['Aglio','1','spicchio','Produce']],
+    source:'Cucchiaio d\'Argento', sourceUrl:'https://www.cucchiaio.it/articolo/menu-settimanale-pranzo-e-cena/'},
+
+  // ---- WEEKEND: ispirati a Conad, Cucchiaio d'Argento e Fatto in casa da Benedetta ----
+  {id:'e71', name:'Insalata di Riso con Gamberetti e Salmone', type:'weekend', category:'salad', season:['summer'],
+    desc:'Riso freddo con gamberetti e salmone, tutto il gusto del mare in un\'insalata veloce.',
+    tags:['riso','gamberi','salmone','frutti di mare','insalata'],
+    ing:[['Riso','320','g','Pantry'],['Gamberi','200','g','Meat & Fish'],['Salmone','150','g','Meat & Fish'],['Piselli','100','g','Produce'],['Limone','1','pz','Produce']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricette/primi-piatti/veloci-primi-piatti/'},
+  {id:'e72', name:'Riso con Tonno e Avocado', type:'weekend', category:'salad', season:['summer'],
+    desc:'Riso freddo con tonno e avocado cremoso, un piatto unico fresco e veloce.',
+    tags:['riso','tonno','pesce','avocado','insalata'],
+    ing:[['Riso','300','g','Pantry'],['Tonno in scatola','160','g','Meat & Fish'],['Avocado','1','pz','Produce'],['Pomodorini','150','g','Produce'],['Limone','1','pz','Produce']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricettari/7-primi-piatti-light-facili-e-veloci/'},
+  {id:'e73', name:'Cosce di Pollo con Zucchine e Menta', type:'weekend', category:'secondo', season:['summer'],
+    desc:'Cosce di pollo cotte con zucchine e menta fresca, un secondo estivo leggero e profumato.',
+    tags:['pollo','carne','zucchine'],
+    ing:[['Cosce di pollo','800','g','Meat & Fish'],['Zucchine','3','pz','Produce'],['Menta','1','mazzo','Produce'],['Limone','1','pz','Produce'],['Olio d\'oliva','30','ml','Pantry']],
+    source:'Conad', sourceUrl:'https://www.gustour.it/ricette/list/tipologia_ricetta-secondi'},
+  {id:'e74', name:'Fettine di Vitello con Pesto Leggero e Insalata di Frutta', type:'weekend', category:'secondo', season:['summer'],
+    desc:'Vitello grigliato accompagnato da un pesto leggero e da un\'insalata di frutta fresca.',
+    tags:['vitello','carne','basilico'],
+    ing:[['Fettine di vitello','500','g','Meat & Fish'],['Basilico','1','mazzo','Produce'],['Parmigiano','30','g','Dairy & Cheese'],['Arancia','1','pz','Produce'],['Olio d\'oliva','30','ml','Pantry']],
+    source:'Conad', sourceUrl:'https://www.gustour.it/ricette/list/tipologia_ricetta-secondi'},
+  {id:'e75', name:'Bowl di Pollo, Riso Rosso, Avocado e Primosale', type:'weekend', category:'salad', season:['all'],
+    desc:'Un piatto unico bilanciato e colorato, perfetto per un pranzo completo.',
+    tags:['pollo','carne','riso','avocado','formaggio','insalata'],
+    ing:[['Petto di pollo','350','g','Meat & Fish'],['Riso','200','g','Pantry'],['Avocado','1','pz','Produce'],['Primosale','100','g','Dairy & Cheese'],['Pomodorini','150','g','Produce']],
+    source:'Conad', sourceUrl:'https://www.conad.it/ricette/piatti-unici'},
+  {id:'e76', name:'Tagliata di Pollo e Tacchino su Cous Cous di Verdure', type:'weekend', category:'secondo', season:['all'],
+    desc:'Carni bianche morbide su un letto di cous cous colorato alle verdure.',
+    tags:['pollo','tacchino','carne','verdure'],
+    ing:[['Petto di pollo','300','g','Meat & Fish'],['Petto di tacchino','200','g','Meat & Fish'],['Cous cous','200','g','Pantry'],['Zucchine','1','pz','Produce'],['Peperoni','1','pz','Produce']],
+    source:'Conad', sourceUrl:'https://www.conad.it/ricette/piatti-unici'},
+  {id:'e77', name:'Filetti di Orata in Padella', type:'weekend', category:'secondo', season:['all'],
+    desc:'Filetti di orata cotti velocemente in padella, un secondo di pesce sano e senza fronzoli.',
+    tags:['orata','pesce'],
+    ing:[['Filetti di orata','500','g','Meat & Fish'],['Limone','1','pz','Produce'],['Prezzemolo','1','mazzo','Produce'],['Aglio','1','spicchio','Produce'],['Olio d\'oliva','30','ml','Pantry']],
+    source:'Cucchiaio d\'Argento', sourceUrl:'https://www.cucchiaio.it/articolo/menu-settimanale-pranzo-e-cena/'},
+  {id:'e78', name:'Crema di Piselli e Menta', type:'weekend', category:'soup', season:['spring'],
+    desc:'Una vellutata fresca e delicata, arricchita da timo e crostini di pane croccante.',
+    tags:['piselli','menta','vegetariano','zuppa'],
+    ing:[['Piselli','500','g','Produce'],['Menta','1','mazzo','Produce'],['Brodo vegetale','700','ml','Pantry'],['Pane raffermo','80','g','Bread & Grains'],['Olio d\'oliva','30','ml','Pantry']],
+    source:'Conad', sourceUrl:'https://www.conad.it/ricette'},
+
+  // ---- WEEKEND: insalatone e piatti unici, ispirati a più fonti ----
+  {id:'e79', name:'Insalata Pantesca', type:'weekend', category:'salad', season:['summer'],
+    desc:'Patate lesse, pomodorini, cipolla rossa, olive e capperi: la classica insalata dell\'isola di Pantelleria.',
+    tags:['patate','pomodoro','olive','capperi','insalata','vegetariano'],
+    ing:[['Patate','4','pz','Produce'],['Pomodorini','300','g','Produce'],['Cipolla rossa','1','pz','Produce'],['Olive nere','60','g','Pantry'],['Capperi','20','g','Pantry']],
+    source:'Cucchiaio d\'Argento', sourceUrl:'https://www.cucchiaio.it/ricetta/insalata-pantesca/'},
+  {id:'e80', name:'Insalatona Melone, Ceci e Gamberetti', type:'weekend', category:'salad', season:['summer'],
+    desc:'Il dolce del melone incontra i gamberetti e i ceci, un\'insalatona estiva originale.',
+    tags:['melone','ceci','legumi','gamberi','frutti di mare','insalata'],
+    ing:[['Melone','0.5','pz','Produce'],['Ceci','300','g','Pantry'],['Gamberi','250','g','Meat & Fish'],['Insalata mista','100','g','Produce'],['Limone','1','pz','Produce']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricettari/insalate-perfette-come-piatto-unico/'},
+  {id:'e81', name:'Insalatona Salmone e Avocado', type:'weekend', category:'salad', season:['summer'],
+    desc:'Salmone e avocado cremoso su un letto di insalata fresca, pronta in pochi minuti.',
+    tags:['salmone','pesce','avocado','insalata'],
+    ing:[['Salmone','250','g','Meat & Fish'],['Avocado','2','pz','Produce'],['Insalata mista','100','g','Produce'],['Pomodorini','150','g','Produce'],['Limone','1','pz','Produce']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricettari/insalate-perfette-come-piatto-unico/'},
+  {id:'e82', name:'Insalata di Farro con Mozzarella e Verdure', type:'weekend', category:'salad', season:['summer'],
+    desc:'Farro, zucchine, melanzane e peperoni grigliati con mozzarella: un piatto unico fresco e completo.',
+    tags:['farro','formaggio','mozzarella','verdure','insalata','vegetariano'],
+    ing:[['Farro','250','g','Pantry'],['Zucchine','1','pz','Produce'],['Melanzane','1','pz','Produce'],['Peperoni','1','pz','Produce'],['Mozzarella','200','g','Dairy & Cheese']],
+    source:'Cookaround', sourceUrl:'https://www.cookaround.com/speciali/5-insalatone-complete-che-valgono-un-pranzo-intero'},
+  {id:'e83', name:'Insalata di Ceci e Tonno', type:'weekend', category:'salad', season:['summer'],
+    desc:'Ceci e tonno con pomodorini e cipolla rossa, un piatto unico equilibrato e senza cottura.',
+    tags:['ceci','legumi','tonno','pesce','insalata'],
+    ing:[['Ceci','400','g','Pantry'],['Tonno in scatola','160','g','Meat & Fish'],['Pomodorini','200','g','Produce'],['Cipolla rossa','0.5','pz','Produce'],['Olio d\'oliva','30','ml','Pantry']],
+    source:'Cookist', sourceUrl:'https://www.cookist.it/insalate-ricette-sfiziose-e-perfette-per-lestate/'},
+  {id:'e84', name:'Insalata di Fusilli Integrali, Scamorza e Avocado', type:'weekend', category:'salad', season:['summer'],
+    desc:'Pasta fredda integrale con scamorza e avocado, un piatto unico completo ed equilibrato.',
+    tags:['formaggio','avocado','pomodoro','insalata','vegetariano'],
+    ing:[['Fusilli integrali','300','g','Pantry'],['Scamorza','150','g','Dairy & Cheese'],['Avocado','1','pz','Produce'],['Pomodorini','150','g','Produce'],['Basilico','1','mazzo','Produce']],
+    source:'Cookaround', sourceUrl:'https://www.cookaround.com/speciali/ricette-di-insalate-facili-e-veloci-insalatone-da-provare'},
+  {id:'e85', name:'Insalata di Rinforzo', type:'weekend', category:'salad', season:['winter'],
+    desc:'Cavolfiore, olive, capperi e acciughe: il tradizionale contorno delle feste del Sud Italia.',
+    tags:['verdure','olive','capperi','acciughe','pesce','insalata'],
+    ing:[['Cavolfiore','1','pz','Produce'],['Olive nere','60','g','Pantry'],['Capperi','20','g','Pantry'],['Filetti di acciughe','4','pz','Meat & Fish'],['Peperoni sott\'aceto','100','g','Pantry']],
+    source:'Cookaround', sourceUrl:'https://www.cookaround.com/speciali/ricette-di-insalate-facili-e-veloci-insalatone-da-provare'},
+  {id:'e86', name:'Insalata di Ceci e Rucola', type:'weekend', category:'salad', season:['summer'],
+    desc:'Ceci, rucola pepata e pomodorini, semplice e pronta in pochi minuti.',
+    tags:['ceci','legumi','verdure','insalata','vegetariano'],
+    ing:[['Ceci','400','g','Pantry'],['Rucola','100','g','Produce'],['Pomodorini','150','g','Produce'],['Parmigiano','30','g','Dairy & Cheese'],['Limone','1','pz','Produce']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricettari/insalate-perfette-come-piatto-unico/'},
+  {id:'e87', name:'Insalatona all\'Italiana', type:'weekend', category:'salad', season:['summer'],
+    desc:'Insalata mista, mozzarella, mais e prosciutto cotto: la classica insalatona che piace a tutti.',
+    tags:['formaggio','mozzarella','prosciutto','insalata','vegetariano'],
+    ing:[['Insalata mista','150','g','Produce'],['Mozzarella','150','g','Dairy & Cheese'],['Pomodorini','200','g','Produce'],['Mais','100','g','Pantry'],['Prosciutto cotto','100','g','Meat & Fish']],
+    source:'Fatto in casa da Benedetta', sourceUrl:'https://www.fattoincasadabenedetta.it/ricettari/insalate-perfette-come-piatto-unico/'},
+  {id:'e88', name:'Insalata di Barbabietola, Mele e Noci', type:'weekend', category:'salad', season:['autumn'],
+    desc:'Barbabietola dolce, mele croccanti e noci, un\'insalata colorata dal gusto agrodolce.',
+    tags:['verdure','noci','insalata','vegetariano'],
+    ing:[['Barbabietola','300','g','Produce'],['Mele','2','pz','Produce'],['Noci','40','g','Pantry'],['Rucola','80','g','Produce'],['Olio d\'oliva','20','ml','Pantry']],
+    source:'Cookaround', sourceUrl:'https://www.cookaround.com/speciali/ricette-di-insalate-facili-e-veloci-insalatone-da-provare'},
+
+  // ---- WEEKEND: pollo, scaloppine e varianti del saltimbocca ----
+  {id:'e89', name:'Saltimbocca di Pollo', type:'weekend', category:'secondo', season:['all'],
+    desc:'Una versione più leggera del classico, con petto di pollo e speck al posto di vitello e prosciutto.',
+    tags:['pollo','carne','cremoso'],
+    ing:[['Petto di pollo','600','g','Meat & Fish'],['Speck','100','g','Meat & Fish'],['Salvia','10','foglie','Produce'],['Vino bianco','80','ml','Pantry'],['Panna','60','ml','Dairy & Cheese']],
+    source:'GialloZafferano', sourceUrl:'https://blog.giallozafferano.it/iannamaria/saltimbocca-di-pollo-cremosi/'},
+  {id:'e90', name:'Scaloppine al Marsala', type:'weekend', category:'secondo', season:['all'],
+    desc:'Fettine di vitello infarinate e cotte in una salsa al Marsala, dolce e avvolgente.',
+    tags:['vitello','carne'],
+    ing:[['Fettine di vitello','600','g','Meat & Fish'],['Marsala','80','ml','Pantry'],['Farina','30','g','Pantry'],['Burro','30','g','Dairy & Cheese'],['Prezzemolo','1','mazzo','Produce']],
+    source:'Buonissimo', sourceUrl:'https://www.buonissimo.it/lericette/7485_Saltimbocca'},
+  {id:'e91', name:'Scaloppine alla Livornese', type:'weekend', category:'secondo', season:['all'],
+    desc:'Scaloppine di vitello cotte in un sugo di pomodoro rapido, un secondo saporito e rustico.',
+    tags:['vitello','carne','pomodoro'],
+    ing:[['Fettine di vitello','600','g','Meat & Fish'],['Pomodori pelati','300','g','Pantry'],['Farina','20','g','Pantry'],['Aglio','2','spicchi','Produce'],['Prezzemolo','1','mazzo','Produce']],
+    source:'Buonissimo', sourceUrl:'https://www.buonissimo.it/lericette/7485_Saltimbocca'},
+  {id:'e92', name:'Scaloppine con i Capperi', type:'weekend', category:'secondo', season:['all'],
+    desc:'Fettine di vitello in una salsa sapida al limone e capperi, pronte in pochi minuti.',
+    tags:['vitello','carne','capperi','limone'],
+    ing:[['Fettine di vitello','600','g','Meat & Fish'],['Capperi','30','g','Pantry'],['Limone','1','pz','Produce'],['Farina','20','g','Pantry'],['Burro','30','g','Dairy & Cheese']],
+    source:'Buonissimo', sourceUrl:'https://www.buonissimo.it/lericette/7485_Saltimbocca'},
+  {id:'e93', name:'Piccata di Vitello al Limone', type:'weekend', category:'secondo', season:['all'],
+    desc:'Fettine di vitello dorate in una salsa fresca e sapida al limone.',
+    tags:['vitello','carne','limone'],
+    ing:[['Fettine di vitello','600','g','Meat & Fish'],['Limone','2','pz','Produce'],['Farina','20','g','Pantry'],['Burro','30','g','Dairy & Cheese'],['Prezzemolo','1','mazzo','Produce']],
+    source:'Cucchiaio d\'Argento', sourceUrl:'https://www.cucchiaio.it/ricetta/ricetta-saltimbocca/'},
+  {id:'e94', name:'Involtini di Pollo con Scamorza e Pancetta', type:'weekend', category:'secondo', season:['all'],
+    desc:'Rotolini di petto di pollo farciti con scamorza filante e pancetta croccante.',
+    tags:['pollo','carne','formaggio','pancetta'],
+    ing:[['Petto di pollo','600','g','Meat & Fish'],['Scamorza','150','g','Dairy & Cheese'],['Pancetta','100','g','Meat & Fish'],['Salvia','6','foglie','Produce'],['Vino bianco','60','ml','Pantry']],
+    source:'Cucchiaio d\'Argento', sourceUrl:'https://www.cucchiaio.it/ricetta/ricetta-saltimbocca/'},
+  {id:'e95', name:'Scaloppine di Pollo al Limone', type:'weekend', category:'secondo', season:['all'],
+    desc:'Petto di pollo infarinato in una salsina fresca e aromatica al limone.',
+    tags:['pollo','carne','limone'],
+    ing:[['Petto di pollo','600','g','Meat & Fish'],['Limone','2','pz','Produce'],['Farina','30','g','Pantry'],['Burro','30','g','Dairy & Cheese'],['Prezzemolo','1','mazzo','Produce']],
+    source:'Buonissimo', sourceUrl:'https://www.buonissimo.it/lericette/7485_Saltimbocca'},
 ];
 
 const DAYS = ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
@@ -1299,27 +1504,43 @@ const NUTRITION = {
   e62:{kcal:240, fiber:1, fat:14}, e63:{kcal:320, fiber:3, fat:10}, e64:{kcal:260, fiber:3, fat:14},
   e65:{kcal:380, fiber:2, fat:20}, e66:{kcal:320, fiber:2, fat:22}, e67:{kcal:420, fiber:1, fat:18},
   e68:{kcal:220, fiber:2, fat:12}, e69:{kcal:300, fiber:3, fat:14}, e70:{kcal:320, fiber:2, fat:10},
+  w71:{kcal:570, fiber:3, fat:26}, w72:{kcal:460, fiber:3, fat:14}, w73:{kcal:520, fiber:2, fat:18},
+  w74:{kcal:460, fiber:3, fat:14}, w75:{kcal:520, fiber:2, fat:18}, w76:{kcal:540, fiber:3, fat:22},
+  w77:{kcal:520, fiber:4, fat:20}, w78:{kcal:530, fiber:5, fat:22}, w79:{kcal:480, fiber:2, fat:16},
+  w80:{kcal:490, fiber:3, fat:16}, w81:{kcal:470, fiber:3, fat:12}, w82:{kcal:460, fiber:3, fat:12},
+  w83:{kcal:580, fiber:2, fat:24}, w84:{kcal:500, fiber:2, fat:16},
+  e71:{kcal:420, fiber:2, fat:10}, e72:{kcal:440, fiber:3, fat:16}, e73:{kcal:420, fiber:2, fat:22},
+  e74:{kcal:380, fiber:2, fat:18}, e75:{kcal:460, fiber:4, fat:18}, e76:{kcal:400, fiber:4, fat:8},
+  e77:{kcal:280, fiber:1, fat:12}, e78:{kcal:240, fiber:6, fat:8},
+  e79:{kcal:320, fiber:5, fat:14}, e80:{kcal:380, fiber:6, fat:10}, e81:{kcal:400, fiber:4, fat:26},
+  e82:{kcal:420, fiber:6, fat:14}, e83:{kcal:380, fiber:8, fat:12}, e84:{kcal:460, fiber:5, fat:16},
+  e85:{kcal:180, fiber:5, fat:10}, e86:{kcal:340, fiber:8, fat:14}, e87:{kcal:380, fiber:2, fat:20},
+  e88:{kcal:220, fiber:4, fat:12},
+  e89:{kcal:420, fiber:1, fat:20}, e90:{kcal:380, fiber:1, fat:18}, e91:{kcal:360, fiber:2, fat:14},
+  e92:{kcal:380, fiber:1, fat:18}, e93:{kcal:380, fiber:1, fat:18}, e94:{kcal:460, fiber:1, fat:24},
+  e95:{kcal:380, fiber:1, fat:16},
 };
 const MEAL_TYPE_LABEL = {
   pasta:'Primo', risotto:'Primo', soup:'Zuppa', salad:'Insalatona', secondo:'Secondo',
 };
 
 /* ---- Lattosio e glutine: adattiamo gli ingredienti invece di evitare il piatto ---- */
-const LACTOSE_KEYWORDS = ['parmigiano','pecorino','panna','burro','mozzarella','feta','ricotta','formaggio','latte','taleggio','burrata','provola','provolone','gorgonzola','grana'];
+const LACTOSE_KEYWORDS = ['parmigiano','pecorino','panna','burro','mozzarella','feta','ricotta','formaggio','latte','taleggio','burrata','provola','provolone','gorgonzola','grana','stracciatella','primosale','scamorza'];
 function isLactoseFree(recipe){
   return !recipe.ing.some(([name])=> LACTOSE_KEYWORDS.some(k=> name.toLowerCase().includes(k)));
 }
 function isGlutenFree(recipe){
   return !recipe.ing.some(([name])=> GLUTEN_KEYWORDS.some(k=> name.toLowerCase().includes(k)));
 }
-const GLUTEN_KEYWORDS = ['spaghetti','penne','fusilli','rigatoni','farfalle','orecchiette','trofie','tonnarelli','ditalini','pastina','pane raffermo','farro','bucatini','mezze maniche','linguine','paccheri','farina','calamarata'];
+const GLUTEN_KEYWORDS = ['spaghetti','penne','fusilli','rigatoni','farfalle','orecchiette','trofie','tonnarelli','ditalini','pastina','pane raffermo','farro','bucatini','mezze maniche','linguine','paccheri','farina','calamarata','cous cous'];
 const LACTOSE_SUB = {
   'Parmigiano':'Parmigiano senza lattosio', 'Pecorino Romano':'Pecorino senza lattosio',
   'Panna':'Panna senza lattosio', 'Burro':'Burro senza lattosio', 'Mozzarella':'Mozzarella senza lattosio',
   'Feta':'Feta senza lattosio', 'Ricotta salata':'Ricotta senza lattosio', 'Crosta di parmigiano':'Crosta di parmigiano senza lattosio',
   'Taleggio':'Taleggio senza lattosio', 'Burrata':'Burrata senza lattosio', 'Provola':'Provola senza lattosio',
   'Formaggio a cubetti':'Formaggio senza lattosio a cubetti', 'Provolone':'Provolone senza lattosio', 'Gorgonzola':'Gorgonzola senza lattosio',
-  'Grana Padano':'Grana Padano senza lattosio',
+  'Grana Padano':'Grana Padano senza lattosio', 'Stracciatella':'Stracciatella senza lattosio', 'Primosale':'Primosale senza lattosio',
+  'Scamorza':'Scamorza senza lattosio',
 };
 const GLUTEN_SUB = {
   'Spaghetti':'Spaghetti senza glutine', 'Penne':'Penne senza glutine', 'Fusilli':'Fusilli senza glutine',
@@ -1328,12 +1549,13 @@ const GLUTEN_SUB = {
   'Pastina':'Pastina senza glutine', 'Pane raffermo':'Pane senza glutine', 'Farro':'Riso o quinoa (al posto del farro, senza glutine)',
   'Bucatini':'Bucatini senza glutine', 'Mezze maniche':'Mezze maniche senza glutine', 'Linguine':'Linguine senza glutine',
   'Paccheri':'Paccheri senza glutine', 'Farina':'Farina senza glutine', 'Calamarata':'Calamarata senza glutine',
+  'Cous cous':'Cous cous di riso (senza glutine)',
 };
 
 /* ---- Uova, frutta a guscio, crostacei/molluschi: qui evitiamo proprio il piatto ---- */
 const ALLERGEN_KEYWORDS = {
   eggFree: ['uovo','uova','tuorl','maionese'],
-  nutFree: ['pinoli','noci','nocciole','mandorle'],
+  nutFree: ['pinoli','noci','nocciole','mandorle','pistacchio'],
   shellfishFree: ['vongole','cozze','gamber','scampi','frutti di mare','misto di mare','polpo','calamari'],
 };
 function containsAllergen(recipe, key){
@@ -2003,6 +2225,9 @@ function renderRecipeBrowser(){
     const nutr = NUTRITION[r.id] || {};
     const mealType = MEAL_TYPE_LABEL[r.category] || '';
     const isFav = favSet.has(r.id);
+    const sourceLine = r.source
+      ? `<div class="rc-source">Ispirato da: ${r.sourceUrl ? `<a href="${r.sourceUrl}" target="_blank" rel="noopener">${escapeHtml(r.source)}</a>` : escapeHtml(r.source)}</div>`
+      : '';
     const card = document.createElement('div');
     card.className = 'recipe-card';
     card.innerHTML = `
@@ -2010,6 +2235,7 @@ function renderRecipeBrowser(){
         <div class="rc-title">${escapeHtml(r.name)} <span class="meal-type">${mealType}</span></div>
         <div class="rc-desc">${escapeHtml(r.desc)}</div>
         <div class="rc-nutr">${nutr.kcal} kcal · ${nutr.fiber} g fibre · ${nutr.fat} g grassi</div>
+        ${sourceLine}
       </div>
       <button class="fav-heart ${isFav?'filled':''}" data-id="${r.id}" title="${activePerson ? 'Preferito di '+escapeHtml(activePerson.name) : 'Aggiungi prima una persona'}">${isFav?'♥':'♡'}</button>
     `;
