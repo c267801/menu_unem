@@ -397,6 +397,12 @@
   }
   .meal-card:nth-of-type(2), .meal-card:last-child:not(:first-child){border-top-color:var(--basil);}
   .meal-card:hover{transform:translateY(-2px); box-shadow:0 14px 32px rgba(38,47,32,0.16);}
+  .meal-card-empty{
+    background:transparent; box-shadow:none;
+    border:1.5px dashed var(--line); border-top:1.5px dashed var(--line);
+  }
+  .meal-card-empty:hover{transform:none; box-shadow:none;}
+  .meal-card-empty .mini-note{margin-bottom:8px;}
   .meal-card-head{
     display:flex; align-items:center; gap:6px;
     font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
@@ -1631,7 +1637,7 @@ let menuHistory = loadMenuHistory();
    invece di far crashare l'app, così l'utente può semplicemente rigenerare. */
 function isValidMenuShape(m){
   return !!(m && Array.isArray(m.week) && m.week.length && m.week.every(w =>
-    w && w.meals && MEALS.every(meal => w.meals[meal] && w.meals[meal].recipeId)
+    w && w.meals && MEALS.every(meal => w.meals[meal] === null || (w.meals[meal] && w.meals[meal].recipeId))
   ));
 }
 if(currentMenu && !isValidMenuShape(currentMenu)){
@@ -1798,8 +1804,13 @@ document.getElementById('savePerson').addEventListener('click', ()=>{
 });
 
 /* ============================= MENU GENERATION ============================= */
+const CATEGORY_FORMAT_WORD = {
+  pasta:'pasta', risotto:'risotto', soup:'zuppa', salad:'insalata', secondo:'secondo',
+};
 function scoreRecipe(recipe, allLikes, allDislikes, favoriteIds){
   const tags = recipe.tags.map(t=>t.toLowerCase());
+  const formatWord = CATEGORY_FORMAT_WORD[recipe.category];
+  if(formatWord) tags.push(formatWord); // "pasta", "risotto"... contano come parole chiave del piatto
   for(const d of allDislikes){
     if(tags.some(t=> t.includes(d) || d.includes(t))) return -Infinity; // hard exclude
   }
@@ -1908,11 +1919,18 @@ function generateMenu(weeklyPrefs){
     const meals = {};
     MEALS.forEach(meal=>{
       const key = day+'|'+meal;
-      const attendeeNames = (mealAttendance[day] && mealAttendance[day][meal] && mealAttendance[day][meal].length)
-        ? mealAttendance[day][meal] : people.map(p=>p.name);
+      const dayAtt = mealAttendance[day];
+      const explicit = !!(dayAtt && Object.prototype.hasOwnProperty.call(dayAtt, meal));
+      const attendeeNames = explicit ? dayAtt[meal] : people.map(p=>p.name);
 
       if(pinned[key]){
-        meals[meal] = {recipeId: pinned[key], attendees: attendeeNames};
+        meals[meal] = {recipeId: pinned[key], attendees: attendeeNames.length ? attendeeNames : people.map(p=>p.name)};
+        return;
+      }
+
+      // se la persona ha tolto tutti dal pasto di proposito, saltiamo del tutto quel pasto
+      if(explicit && attendeeNames.length === 0){
+        meals[meal] = null;
         return;
       }
 
@@ -1922,18 +1940,30 @@ function generateMenu(weeklyPrefs){
       const mealFavorites = new Set(attendees.flatMap(p=>p.favorites || []));
       const categoriesForThis = isWeekend ? catsWeekend : catsWeekday;
 
+      const respectsDislikes = r => scoreRecipe(r, [], mealDislikes) > -Infinity;
+
       let pool = pickPoolForMeal(isWeekend, season, categoriesForThis);
       pool = pool.filter(r=>passesHardAllergens(r, attendees));
-      let poolNoDup = pool.filter(r=>!usedIds.has(r.id));
+      let poolNoDup = pool.filter(r=>respectsDislikes(r) && !usedIds.has(r.id));
+
       if(poolNoDup.length === 0 && categoriesForThis.length){
         // la categoria richiesta ha pochi piatti: prima di ripetere, proviamo
-        // ad allargare togliendo il filtro di categoria (restano gusti e allergie)
+        // ad allargare togliendo il filtro di categoria (restano gusti, avversioni e allergie)
         let widerPool = pickPoolForMeal(isWeekend, season, []).filter(r=>passesHardAllergens(r, attendees));
-        poolNoDup = widerPool.filter(r=>!usedIds.has(r.id));
+        poolNoDup = widerPool.filter(r=>respectsDislikes(r) && !usedIds.has(r.id));
         if(poolNoDup.length) pool = widerPool;
       }
       if(poolNoDup.length === 0){
-        // esauriti davvero tutti i piatti unici disponibili: qui ripetiamo per non bloccarci
+        // le avversioni escludono tutto il pool abituale (es. "pasta" tra le cose da evitare
+        // nei giorni feriali): allarghiamo a tutte le ricette, rispettando comunque le avversioni
+        const allRespecting = RECIPES.filter(r=>passesHardAllergens(r, attendees) && respectsDislikes(r));
+        poolNoDup = allRespecting.filter(r=>!usedIds.has(r.id));
+        if(poolNoDup.length) pool = allRespecting;
+        else if(allRespecting.length) pool = poolNoDup = allRespecting; // permetti ripetizioni pur di rispettare le avversioni
+      }
+      if(poolNoDup.length === 0){
+        // caso estremo: nessuna ricetta rispetta tutte le avversioni contemporaneamente,
+        // qui ripieghiamo pur di non bloccarci
         poolNoDup = pool.length ? pool : (isWeekend ? RECIPES.filter(r=>r.type==='weekend') : RECIPES.filter(r=>r.type==='weekday'));
         poolNoDup = poolNoDup.filter(r=>passesHardAllergens(r, attendees));
       }
@@ -1945,7 +1975,7 @@ function generateMenu(weeklyPrefs){
     return {day, isWeekend, meals};
   });
 
-  const allChosenIds = week.flatMap(w=>MEALS.map(m=>w.meals[m].recipeId));
+  const allChosenIds = week.flatMap(w=>MEALS.map(m=>w.meals[m] ? w.meals[m].recipeId : null)).filter(Boolean);
   currentMenu = {id:'menu_'+Date.now(), week, generatedAt: new Date().toISOString(), season, ratings:{}};
   saveMenu(currentMenu);
   saveHistory([...history, ...allChosenIds]);
@@ -1974,7 +2004,20 @@ function renderMenu(){
     dayWrap.style.animationDelay = (dayIdx*0.04)+'s';
 
     const mealsHtml = MEALS.map(meal=>{
-      const {recipeId, attendees} = meals[meal];
+      const mealData = meals[meal];
+      if(!mealData){
+        return `
+          <div class="meal-card meal-card-empty">
+            <div class="meal-card-head">
+              <span class="meal-icon">${MEAL_ICON[meal]}</span>
+              <span class="meal-label">${MEAL_LABEL[meal]}</span>
+            </div>
+            <div class="mini-note">Nessuno a ${MEAL_LABEL[meal].toLowerCase()} questo giorno.</div>
+            <button class="swap-btn" data-day="${day}" data-meal="${meal}">+ Aggiungi</button>
+          </div>
+        `;
+      }
+      const {recipeId, attendees} = mealData;
       const r = recipeById(recipeId);
       const nutr = NUTRITION[recipeId] || {};
       const mealType = MEAL_TYPE_LABEL[r.category] || '';
@@ -2056,16 +2099,16 @@ document.querySelectorAll('.swap-type-btn').forEach(btn=>{
    e non già usati altrove nella settimana (se possibile). */
 function buildSwapCandidatePool(day, meal, catKey){
   const dayEntry = currentMenu.week.find(w=>w.day===day);
-  const entry = dayEntry.meals[meal];
-  const attendeeNames = (entry.attendees && entry.attendees.length) ? entry.attendees : people.map(p=>p.name);
+  const entry = dayEntry.meals[meal]; // può essere null se il pasto era stato saltato
+  const attendeeNames = (entry && entry.attendees && entry.attendees.length) ? entry.attendees : people.map(p=>p.name);
   const attendees = people.filter(p=>attendeeNames.includes(p.name));
 
   const allowedCats = CATEGORY_MAP[catKey] || [];
-  let pool = RECIPES.filter(r=> allowedCats.includes(r.category) && r.id !== entry.recipeId);
+  let pool = RECIPES.filter(r=> allowedCats.includes(r.category) && r.id !== (entry ? entry.recipeId : null));
   pool = pool.filter(r=>passesHardAllergens(r, attendees));
 
   const usedElsewhere = new Set(
-    currentMenu.week.flatMap(w=> MEALS.filter(m=> !(w.day===day && m===meal)).map(m=>w.meals[m].recipeId))
+    currentMenu.week.flatMap(w=> MEALS.filter(m=> !(w.day===day && m===meal) && w.meals[m]).map(m=>w.meals[m].recipeId))
   );
   const poolNoDup = pool.filter(r=>!usedElsewhere.has(r.id));
   return poolNoDup.length ? poolNoDup : pool;
@@ -2113,7 +2156,7 @@ document.getElementById('swapAnyBtn').addEventListener('click', ()=>{
   }
   const dayEntry = currentMenu.week.find(w=>w.day===swapTarget.day);
   const entry = dayEntry.meals[swapTarget.meal];
-  const attendeeNames = (entry.attendees && entry.attendees.length) ? entry.attendees : people.map(p=>p.name);
+  const attendeeNames = (entry && entry.attendees && entry.attendees.length) ? entry.attendees : people.map(p=>p.name);
   const attendees = people.filter(p=>attendeeNames.includes(p.name));
   const mealLikes = [...new Set(attendees.flatMap(p=>p.likes))];
   const mealDislikes = [...new Set(attendees.flatMap(p=>p.dislikes))];
@@ -2126,7 +2169,12 @@ document.getElementById('swapAnyBtn').addEventListener('click', ()=>{
 function confirmSwapChoice(recipeId){
   const dayEntry = currentMenu.week.find(w=>w.day===swapTarget.day);
   const entry = dayEntry.meals[swapTarget.meal];
-  entry.recipeId = recipeId;
+  if(entry){
+    entry.recipeId = recipeId;
+  } else {
+    // il pasto era stato saltato: lo creiamo ora, presenti tutti di default
+    dayEntry.meals[swapTarget.meal] = {recipeId, attendees: people.map(p=>p.name)};
+  }
   saveMenu(currentMenu);
   renderMenu();
   swapModalBackdrop.classList.remove('open');
@@ -2182,7 +2230,7 @@ function renderCronologia(){
     const dateStr = new Date(m.generatedAt).toLocaleDateString('it-IT', {day:'numeric', month:'long', year:'numeric'});
     const dishes = m.week.map(w=>{
       if(w.meals){
-        return `${w.day}: ${MEALS.map(meal=>`${MEAL_LABEL[meal]} — ${recipeById(w.meals[meal].recipeId)?.name || '—'}`).join(', ')}`;
+        return `${w.day}: ${MEALS.map(meal=> w.meals[meal] ? `${MEAL_LABEL[meal]} — ${recipeById(w.meals[meal].recipeId)?.name || '—'}` : `${MEAL_LABEL[meal]} — nessuno`).join(', ')}`;
       }
       return `${w.day}: ${recipeById(w.recipeId)?.name || '—'}`; // formati vecchi, senza pranzo/cena
     }).join(' · ');
@@ -2354,6 +2402,7 @@ function openCheckinModal(){
     currentMenu.week.forEach(({day, meals})=>{
       if(!meals) return;
       MEALS.forEach(meal=>{
+        if(!meals[meal]) return; // pasto saltato la scorsa settimana: niente da tenere
         const r = recipeById(meals[meal].recipeId);
         const row = document.createElement('label');
         row.className = 'keep-row';
@@ -2445,8 +2494,8 @@ async function buildMenuImageBlob(){
 
   let y = headerH;
   days.forEach(({day, isWeekend, meals})=>{
-    const pranzoName = fitText(ctx, recipeById(meals.pranzo.recipeId).name, width - 200);
-    const cenaName = fitText(ctx, recipeById(meals.cena.recipeId).name, width - 200);
+    const pranzoName = fitText(ctx, meals.pranzo ? recipeById(meals.pranzo.recipeId).name : 'Nessuno', width - 200);
+    const cenaName = fitText(ctx, meals.cena ? recipeById(meals.cena.recipeId).name : 'Nessuno', width - 200);
 
     ctx.fillStyle = isWeekend ? '#C9962B' : '#2F4A38';
     ctx.font = "700 30px 'Inter', sans-serif";
@@ -2517,7 +2566,7 @@ function buildShoppingList(){
   if(!currentMenu) return {};
   const aisles = {};
   currentMenu.week.forEach(dayEntry=>{
-    const mealEntries = dayEntry.meals ? MEALS.map(m=>dayEntry.meals[m]) : [dayEntry]; // fallback formati vecchi
+    const mealEntries = (dayEntry.meals ? MEALS.map(m=>dayEntry.meals[m]) : [dayEntry]).filter(Boolean); // fallback formati vecchi + salta pasti saltati
     mealEntries.forEach(({recipeId, attendees})=>{
       const r = recipeById(recipeId);
       const attendeeNames = (attendees && attendees.length) ? attendees : people.map(p=>p.name);
@@ -2611,6 +2660,7 @@ function listAsText(){
   currentMenu.week.forEach(({day, meals})=>{
     if(meals){
       MEALS.forEach(meal=>{
+        if(!meals[meal]) return;
         text += `${day} - ${MEAL_LABEL[meal]}: ${recipeById(meals[meal].recipeId).name}\n`;
       });
     }
