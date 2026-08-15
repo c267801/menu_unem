@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>La Lista — Menu settimanale italiano e lista della spesa</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="La Lista">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2F4A38">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700;800&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
@@ -161,12 +167,16 @@
     color:var(--basil-dark);
   }
   .tag.dislike{background:rgba(178,58,46,0.1); color:var(--tomato);}
-  .person-card .remove-btn{
+  .person-card .card-actions{
     position:absolute; top:12px; right:12px;
+    display:flex; gap:10px;
+  }
+  .person-card .edit-btn, .person-card .remove-btn{
     background:none; border:none; cursor:pointer;
-    color:var(--ink-soft); font-size:17px; line-height:1;
+    color:var(--ink-soft); font-size:16px; line-height:1;
     opacity:.5; transition:opacity .15s ease, transform .15s ease;
   }
+  .person-card .edit-btn:hover{opacity:1; color:var(--basil); transform:scale(1.15);}
   .person-card .remove-btn:hover{opacity:1; color:var(--tomato); transform:scale(1.15);}
 
   .add-person-card{
@@ -1674,7 +1684,10 @@ function renderPeople(){
       .filter(k=> p.dietary && p.dietary[k])
       .map(k=>`<span class="lactose-free-badge">${INTOLERANCE_LABEL[k]}</span>`).join('');
     card.innerHTML = `
-      <button class="remove-btn" title="Rimuovi ${escapeHtml(p.name)}" data-idx="${idx}">✕</button>
+      <div class="card-actions">
+        <button class="edit-btn" title="Modifica ${escapeHtml(p.name)}" data-idx="${idx}">✎</button>
+        <button class="remove-btn" title="Rimuovi ${escapeHtml(p.name)}" data-idx="${idx}">✕</button>
+      </div>
       <h3>${escapeHtml(p.name)}</h3>
       ${badges ? `<div style="margin-bottom:8px;">${badges}</div>` : ''}
       <div class="tagblock">
@@ -1694,6 +1707,12 @@ function renderPeople(){
   addCard.addEventListener('click', openAddPersonModal);
   peopleGrid.appendChild(addCard);
 
+  peopleGrid.querySelectorAll('.edit-btn').forEach(b=>{
+    b.addEventListener('click', (e)=>{
+      const idx = parseInt(e.currentTarget.dataset.idx,10);
+      openEditPersonModal(idx);
+    });
+  });
   peopleGrid.querySelectorAll('.remove-btn').forEach(b=>{
     b.addEventListener('click', (e)=>{
       const idx = parseInt(e.currentTarget.dataset.idx,10);
@@ -1707,21 +1726,25 @@ function renderPeople(){
 }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-/* ---- Add person modal ---- */
+/* ---- Add / Edit person modal ---- */
 const personModalBackdrop = document.getElementById('personModalBackdrop');
 const likesInputs = document.getElementById('likesInputs');
 const dislikesInputs = document.getElementById('dislikesInputs');
-function buildFiveInputs(container, placeholder){
+let editingPersonIndex = null;
+function buildFiveInputs(container, placeholder, values){
   container.innerHTML='';
   for(let i=0;i<5;i++){
     const inp = document.createElement('input');
     inp.type='text';
     inp.placeholder = placeholder + ' #' + (i+1);
+    if(values && values[i]) inp.value = values[i];
     container.appendChild(inp);
   }
 }
 function openAddPersonModal(){
+  editingPersonIndex = null;
   document.getElementById('modalTitle').textContent = 'Aggiungi una persona';
+  document.getElementById('savePerson').textContent = 'Salva';
   document.getElementById('personName').value='';
   Object.keys(INTOLERANCE_LABEL).forEach(k=>{
     document.getElementById('person'+k.charAt(0).toUpperCase()+k.slice(1)).checked = false;
@@ -1730,7 +1753,24 @@ function openAddPersonModal(){
   buildFiveInputs(dislikesInputs, 'es. funghi');
   personModalBackdrop.classList.add('open');
 }
-document.getElementById('cancelPerson').addEventListener('click', ()=> personModalBackdrop.classList.remove('open'));
+function openEditPersonModal(idx){
+  const p = people[idx];
+  if(!p) return;
+  editingPersonIndex = idx;
+  document.getElementById('modalTitle').textContent = `Modifica ${p.name}`;
+  document.getElementById('savePerson').textContent = 'Salva modifiche';
+  document.getElementById('personName').value = p.name;
+  Object.keys(INTOLERANCE_LABEL).forEach(k=>{
+    document.getElementById('person'+k.charAt(0).toUpperCase()+k.slice(1)).checked = !!(p.dietary && p.dietary[k]);
+  });
+  buildFiveInputs(likesInputs, 'es. pomodoro', p.likes);
+  buildFiveInputs(dislikesInputs, 'es. funghi', p.dislikes);
+  personModalBackdrop.classList.add('open');
+}
+document.getElementById('cancelPerson').addEventListener('click', ()=>{
+  personModalBackdrop.classList.remove('open');
+  editingPersonIndex = null;
+});
 document.getElementById('savePerson').addEventListener('click', ()=>{
   const name = document.getElementById('personName').value.trim();
   if(!name){ alert('Inserisci un nome.'); return; }
@@ -1740,10 +1780,16 @@ document.getElementById('savePerson').addEventListener('click', ()=>{
   Object.keys(INTOLERANCE_LABEL).forEach(k=>{
     dietary[k] = document.getElementById('person'+k.charAt(0).toUpperCase()+k.slice(1)).checked;
   });
-  people.push({name, likes, dislikes, dietary, favorites:[]});
+  if(editingPersonIndex !== null){
+    const existing = people[editingPersonIndex];
+    people[editingPersonIndex] = {...existing, name, likes, dislikes, dietary};
+  } else {
+    people.push({name, likes, dislikes, dietary, favorites:[]});
+  }
   savePeople(people);
   renderPeople();
   personModalBackdrop.classList.remove('open');
+  editingPersonIndex = null;
 });
 
 /* ============================= MENU GENERATION ============================= */
