@@ -261,10 +261,12 @@
     width:100%; padding:11px 14px; border-radius:10px;
     border:1px solid var(--line); font-size:15px; font-family:'Inter',sans-serif;
     background:#fff;
+    position:sticky; top:0; z-index:2;
   }
   #swapIngredientSearch:focus{outline:none; border-color:var(--basil);}
   #swapIngredientResults{
-    max-height:260px; overflow-y:auto; margin-top:10px;
+    max-height:min(50vh, 420px); overflow-y:auto; -webkit-overflow-scrolling:touch;
+    margin-top:10px; padding-right:2px;
   }
   .swap-result-row{
     display:block; width:100%; text-align:left;
@@ -2077,15 +2079,9 @@ function recipeMatchesQuery(recipe, query){
 }
 
 function renderSwapResults(query){
-  const matches = swapCandidatePool.filter(r=> recipeMatchesQuery(r, query));
+  const q = query.trim();
+  const matches = q ? swapCandidatePool.filter(r=> recipeMatchesQuery(r, q)) : swapCandidatePool;
   swapIngredientResults.innerHTML = '';
-  if(!query.trim()){
-    const hint = document.createElement('div');
-    hint.className = 'swap-hint';
-    hint.textContent = `Scrivi un ingrediente per filtrare, oppure scegli "Qualsiasi" — ${swapCandidatePool.length} piatti disponibili in questa categoria.`;
-    swapIngredientResults.appendChild(hint);
-    return;
-  }
   if(matches.length === 0){
     const empty = document.createElement('div');
     empty.className = 'swap-empty';
@@ -2093,7 +2089,7 @@ function renderSwapResults(query){
     swapIngredientResults.appendChild(empty);
     return;
   }
-  matches.slice(0, 12).forEach(r=>{
+  matches.forEach(r=>{
     const row = document.createElement('button');
     row.type = 'button';
     row.className = 'swap-result-row';
