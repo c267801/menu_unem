@@ -246,6 +246,71 @@
   }
   .cat-pill input{accent-color:var(--basil); width:14px; height:14px;}
 
+  /* ---------- Swap ingredient live search ---------- */
+  #swapIngredientSearch{
+    width:100%; padding:11px 14px; border-radius:10px;
+    border:1px solid var(--line); font-size:15px; font-family:'Inter',sans-serif;
+    background:#fff;
+  }
+  #swapIngredientSearch:focus{outline:none; border-color:var(--basil);}
+  #swapIngredientResults{
+    max-height:260px; overflow-y:auto; margin-top:10px;
+  }
+  .swap-result-row{
+    display:block; width:100%; text-align:left;
+    background:var(--paper-white); border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; margin-bottom:6px; cursor:pointer;
+    transition:border-color .15s ease, transform .1s ease;
+  }
+  .swap-result-row:hover{border-color:var(--basil); transform:translateX(2px);}
+  .swap-result-row:active{transform:scale(.98);}
+  .swap-result-row .rname{
+    font-family:'Fraunces',serif; font-style:italic; font-size:15px; color:var(--ink);
+    display:block; margin-bottom:2px;
+  }
+  .swap-result-row .rdesc{font-size:12px; color:var(--ink-soft); line-height:1.3;}
+  .swap-empty{font-size:13px; color:var(--ink-soft); text-align:center; padding:14px 0;}
+  .swap-hint{font-size:12px; color:var(--ink-soft); text-align:center; padding:14px 0;}
+
+  /* ---------- Recipe browser ---------- */
+  #recipeBrowserSearch{
+    width:100%; padding:11px 14px; border-radius:10px;
+    border:1px solid var(--line); font-size:15px; font-family:'Inter',sans-serif;
+    background:#fff; margin-bottom:12px;
+  }
+  #recipeBrowserSearch:focus{outline:none; border-color:var(--basil);}
+  .person-chip{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:13.5px; font-weight:700; color:var(--basil-dark);
+    background:var(--paper-white); border:1.5px solid var(--line);
+    padding:6px 14px; border-radius:100px; cursor:pointer;
+    transition:.15s ease;
+  }
+  .person-chip.active{background:var(--basil); border-color:var(--basil); color:#fff;}
+  .recipe-card{
+    background:var(--paper-white); border:1px solid var(--line); border-radius:14px;
+    padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow);
+    display:flex; justify-content:space-between; align-items:flex-start; gap:10px;
+    transition:transform .15s ease;
+  }
+  .recipe-card:hover{transform:translateY(-2px);}
+  .recipe-card .rc-body{flex:1; min-width:0;}
+  .recipe-card .rc-title{
+    font-family:'Fraunces',serif; font-style:italic; font-size:17px; color:var(--ink);
+    margin:0 0 3px;
+  }
+  .recipe-card .rc-desc{font-size:13px; color:var(--ink-soft); line-height:1.4; margin-bottom:6px;}
+  .recipe-card .rc-nutr{font-size:11.5px; color:var(--ink-soft);}
+  .fav-heart{
+    flex-shrink:0; background:none; border:none; cursor:pointer;
+    font-size:22px; line-height:1; padding:2px; color:var(--line);
+    transition:transform .15s ease, color .15s ease;
+  }
+  .fav-heart.filled{color:var(--tomato);}
+  .fav-heart:hover{transform:scale(1.15);}
+  .fav-heart:active{transform:scale(.9);}
+  .recipe-browser-count{font-size:12px; color:var(--ink-soft); margin-bottom:10px;}
+
   /* ---------- Week / notebook page ---------- */
   .notebook{
     background:transparent;
@@ -486,6 +551,7 @@
 <nav class="tabs">
   <button data-panel="people" class="active"><span class="tab-icon">👥</span>Persone</button>
   <button data-panel="menu"><span class="tab-icon">🍝</span>Menu</button>
+  <button data-panel="ricette"><span class="tab-icon">📖</span>Ricette</button>
   <button data-panel="list"><span class="tab-icon">🛒</span>Lista</button>
   <button data-panel="cronologia"><span class="tab-icon">🗂️</span>Cronologia</button>
   <button data-panel="backup"><span class="tab-icon">💾</span>Backup</button>
@@ -513,6 +579,27 @@
       <button class="btn btn-primary" id="regenerateBtn">↻ Rimescola la settimana</button>
       <button class="btn btn-outline" id="toListBtn">Crea la lista della spesa →</button>
     </div>
+  </section>
+
+  <!-- RICETTARIO -->
+  <section class="panel" id="panel-ricette">
+    <h2 class="panel-title">Tutte le ricette</h2>
+    <p class="panel-note">Sfoglia il ricettario, cerca per ingrediente o nome, e segna i preferiti di ciascuno — conteranno di più nella generazione del menu.</p>
+    <div class="field">
+      <label>Preferiti di</label>
+      <div id="favoritePersonChips" class="taglist" style="gap:8px; margin-top:4px;"></div>
+    </div>
+    <div class="field">
+      <input type="text" id="recipeBrowserSearch" placeholder="Cerca per ingrediente o nome piatto… es. gamberi, pomodoro, norma" autocomplete="off">
+    </div>
+    <div class="taglist" id="recipeBrowserFilters" style="gap:8px; margin-bottom:16px;">
+      <label class="cat-pill"><input type="checkbox" value="primi"> Primi</label>
+      <label class="cat-pill"><input type="checkbox" value="secondi"> Secondi</label>
+      <label class="cat-pill"><input type="checkbox" value="insalatone"> Insalatone</label>
+      <label class="cat-pill"><input type="checkbox" value="zuppe"> Zuppe</label>
+      <label class="cat-pill"><input type="checkbox" id="onlyFavoritesToggle"> ❤️ Solo preferiti</label>
+    </div>
+    <div id="recipeBrowserResults"></div>
   </section>
 
   <!-- SHOPPING LIST -->
@@ -638,11 +725,18 @@
 <div class="modal-backdrop" id="swapModalBackdrop">
   <div class="modal">
     <h3 id="swapModalTitle">Cosa preferisci per questo pasto?</h3>
-    <div class="btn-row" style="flex-direction:column; align-items:stretch;">
+    <div id="swapStepType" class="btn-row" style="flex-direction:column; align-items:stretch;">
       <button class="btn btn-outline swap-type-btn" data-cat="primi">Primo</button>
       <button class="btn btn-outline swap-type-btn" data-cat="secondi">Secondo</button>
       <button class="btn btn-outline swap-type-btn" data-cat="insalatone">Insalata</button>
       <button class="btn btn-outline swap-type-btn" data-cat="zuppe">Zuppa</button>
+    </div>
+    <div id="swapStepIngredient" style="display:none;">
+      <div class="field">
+        <input type="text" id="swapIngredientSearch" placeholder="Cerca per ingrediente… es. gamberi, zucca, ricotta" autocomplete="off">
+      </div>
+      <div id="swapIngredientResults"></div>
+      <button class="btn btn-outline" id="swapAnyBtn" style="width:100%; margin-top:6px;">Qualsiasi, scegli tu →</button>
     </div>
     <div class="btn-row">
       <button class="btn btn-outline" id="cancelSwap">Annulla</button>
@@ -656,126 +750,488 @@ const RECIPES = [
   // ---- WEEKDAY: light, fast pasta ----
   {id:'w1', name:'Aglio, Olio e Peperoncino', type:'weekday', category:'pasta',
     desc:'Spaghetti saltati nell\'olio profumato all\'aglio, con un tocco di peperoncino.',
-    tags:['garlic','olive oil','spicy','simple'],
+    tags:['aglio','olio d',',',','],
     ing:[['Spaghetti','320','g','Pantry'],['Aglio','4','spicchi','Produce'],['Olio d\'oliva','60','ml','Pantry'],['Peperoncino in fiocchi','1','cucchiaini','Pantry'],['Prezzemolo','1','mazzo','Produce']]},
   {id:'w2', name:'Pasta al Pomodoro', type:'weekday', category:'pasta',
     desc:'Sugo di pomodoro semplice con basilico, il classico di ogni giorno.',
-    tags:['tomato','basil','simple','vegetarian'],
+    tags:['pomodoro','basilico','semplice','vegetariano'],
     ing:[['Penne','320','g','Pantry'],['Pomodori pelati','400','g','Pantry'],['Aglio','2','spicchi','Produce'],['Basilico','1','mazzo','Produce'],['Olio d\'oliva','30','ml','Pantry'],['Parmigiano','40','g','Dairy & Cheese']]},
   {id:'w3', name:'Cacio e Pepe', type:'weekday', category:'pasta',
     desc:'Solo pecorino e pepe nero macinato, fatto come si deve.',
-    tags:['cheese','pecorino','pepper','simple'],
+    tags:['formaggio','pecorino','pepe','semplice'],
     ing:[['Tonnarelli','320','g','Pantry'],['Pecorino Romano','100','g','Dairy & Cheese'],['Pepe nero','2','cucchiaini','Pantry']]},
   {id:'w4', name:'Spaghetti alle Vongole', type:'weekday', category:'pasta',
     desc:'Vongole, aglio, vino bianco, una spolverata di prezzemolo.',
-    tags:['seafood','clams','garlic','white wine'],
+    tags:['frutti di mare','vongole','aglio','vino bianco'],
     ing:[['Spaghetti','320','g','Pantry'],['Vongole','1','kg','Meat & Fish'],['Aglio','3','spicchi','Produce'],['Vino bianco','100','ml','Pantry'],['Prezzemolo','1','mazzo','Produce']]},
   {id:'w5', name:'Penne all\'Arrabbiata', type:'weekday', category:'pasta',
     desc:'Sugo di pomodoro reso vivace da aglio e peperoncino.',
-    tags:['tomato','spicy','garlic','vegetarian'],
+    tags:['pomodoro','piccante','aglio','vegetariano'],
     ing:[['Penne','320','g','Pantry'],['Pomodori pelati','400','g','Pantry'],['Aglio','3','spicchi','Produce'],['Peperoncino in fiocchi','1','cucchiaini','Pantry'],['Olio d\'oliva','30','ml','Pantry']]},
   {id:'w6', name:'Pasta al Pesto', type:'weekday', category:'pasta',
     desc:'Basilico, pinoli, aglio e parmigiano, frullati al momento.',
-    tags:['basil','pine nuts','cheese','garlic','vegetarian'],
+    tags:['basilico','pinoli','formaggio','aglio','vegetariano'],
     ing:[['Trofie','320','g','Pantry'],['Basilico','2','mazzo','Produce'],['Pinoli','40','g','Pantry'],['Parmigiano','50','g','Dairy & Cheese'],['Aglio','1','spicchio','Produce'],['Olio d\'oliva','80','ml','Pantry']]},
   {id:'w7', name:'Pasta alla Norma', type:'weekday', category:'pasta',
     desc:'Melanzane fritte, pomodoro e ricotta salata, alla siciliana.',
-    tags:['eggplant','tomato','cheese','vegetarian'],
+    tags:['melanzane','pomodoro','formaggio','vegetariano'],
     ing:[['Rigatoni','320','g','Pantry'],['Melanzana','1','grande','Produce'],['Pomodori pelati','400','g','Pantry'],['Ricotta salata','80','g','Dairy & Cheese'],['Basilico','1','mazzo','Produce']]},
   {id:'w8', name:'Spaghetti alla Carbonara', type:'weekday', category:'pasta',
     desc:'Guanciale, tuorlo d\'uovo, pecorino, pepe nero.',
-    tags:['pork','egg','cheese','pecorino'],
+    tags:['maiale','uovo','formaggio','pecorino'],
     ing:[['Spaghetti','320','g','Pantry'],['Guanciale','150','g','Meat & Fish'],['Tuorli d\'uovo','4','pz','Dairy & Cheese'],['Pecorino Romano','60','g','Dairy & Cheese'],['Pepe nero','1','cucchiaini','Pantry']]},
   {id:'w9', name:'Orecchiette con Cime di Rapa', type:'weekday', category:'pasta',
     desc:'Orecchiette con cime di rapa, acciughe e aglio.',
-    tags:['greens','anchovy','garlic','vegetables'],
+    tags:['verdure a foglia','acciughe','aglio','verdure'],
     ing:[['Orecchiette','320','g','Pantry'],['Cime di rapa','1','mazzo','Produce'],['Filetti di acciughe','4','pz','Meat & Fish'],['Aglio','3','spicchi','Produce'],['Peperoncino in fiocchi','0.5','cucchiaini','Pantry']]},
   {id:'w10', name:'Pasta al Tonno', type:'weekday', category:'pasta',
     desc:'Tonno in scatola, pomodoro, capperi — un classico veloce della settimana.',
-    tags:['tuna','fish','tomato','simple'],
+    tags:['tonno','pesce','pomodoro','semplice'],
     ing:[['Fusilli','320','g','Pantry'],['Tonno in scatola','160','g','Meat & Fish'],['Pomodori pelati','300','g','Pantry'],['Capperi','20','g','Pantry'],['Aglio','2','spicchi','Produce']]},
   {id:'w11', name:'Farfalle con Zucchine', type:'weekday', category:'pasta',
     desc:'Zucchine saltate, un filo di panna, parmigiano.',
-    tags:['zucchini','vegetables','cheese','vegetarian'],
+    tags:['zucchine','verdure','formaggio','vegetariano'],
     ing:[['Farfalle','320','g','Pantry'],['Zucchine','3','pz','Produce'],['Panna','100','ml','Dairy & Cheese'],['Parmigiano','40','g','Dairy & Cheese'],['Aglio','1','spicchio','Produce']]},
   {id:'w12', name:'Pasta e Ceci', type:'weekday', category:'pasta',
     desc:'Pasta corta cotta con ceci e rosmarino, a metà tra primo e zuppa.',
-    tags:['chickpeas','legumes','rosemary','vegetarian'],
+    tags:['ceci','legumi','rosmarino','vegetariano'],
     ing:[['Ditalini','200','g','Pantry'],['Ceci','400','g','Pantry'],['Rosmarino','2','rametti','Produce'],['Aglio','2','spicchi','Produce'],['Pomodori pelati','200','g','Pantry']]},
   {id:'w13', name:'Spaghetti al Limone', type:'weekday', category:'pasta',
     desc:'Cremosa al limone e parmigiano, pronta in dieci minuti.',
-    tags:['lemon','cheese','simple','vegetarian'],
+    tags:['limone','formaggio','semplice','vegetariano'],
     ing:[['Spaghetti','320','g','Pantry'],['Limone','2','pz','Produce'],['Parmigiano','60','g','Dairy & Cheese'],['Burro','40','g','Dairy & Cheese'],['Panna','60','ml','Dairy & Cheese']]},
   {id:'w14', name:'Pasta con Salsiccia e Friarielli', type:'weekday', category:'pasta',
     desc:'Salsiccia sbriciolata con friarielli e aglio.',
-    tags:['sausage','pork','greens','garlic'],
+    tags:['salsiccia','maiale','verdure a foglia','aglio'],
     ing:[['Orecchiette','320','g','Pantry'],['Salsiccia','300','g','Meat & Fish'],['Cime di rapa','1','mazzo','Produce'],['Aglio','3','spicchi','Produce'],['Peperoncino in fiocchi','0.5','cucchiaini','Pantry']]},
   {id:'w15', name:'Pasta alla Puttanesca', type:'weekday', category:'pasta',
     desc:'Olive, capperi, acciughe, pomodoro — decisa e veloce.',
-    tags:['olives','capers','anchovy','tomato'],
+    tags:['olive','capperi','acciughe','pomodoro'],
     ing:[['Spaghetti','320','g','Pantry'],['Pomodori pelati','400','g','Pantry'],['Olive nere','80','g','Pantry'],['Capperi','20','g','Pantry'],['Filetti di acciughe','4','pz','Meat & Fish'],['Aglio','2','spicchi','Produce']]},
   {id:'w16', name:'Pasta con Piselli e Prosciutto', type:'weekday', category:'pasta',
     desc:'Piselli dolci e prosciutto cotto in una leggera salsa al burro.',
-    tags:['peas','ham','pork','vegetables'],
+    tags:['piselli','prosciutto','maiale','verdure'],
     ing:[['Farfalle','320','g','Pantry'],['Piselli','250','g','Produce'],['Prosciutto cotto','120','g','Meat & Fish'],['Burro','30','g','Dairy & Cheese'],['Scalogno','1','pz','Produce']]},
 
   // ---- WEEKEND: risotto / soups / salads / secondi, seasonal ----
   {id:'e1', name:'Risotto ai Funghi Porcini', type:'weekend', category:'risotto', season:['autumn','winter'],
     desc:'Risotto cremoso ai funghi porcini, ricco e saporito.',
-    tags:['mushroom','cheese','creamy'],
+    tags:['funghi','formaggio','cremoso'],
     ing:[['Riso Arborio','320','g','Pantry'],['Funghi porcini secchi','30','g','Pantry'],['Brodo vegetale','1','l','Pantry'],['Parmigiano','60','g','Dairy & Cheese'],['Cipolla','1','pz','Produce'],['Vino bianco','100','ml','Pantry']]},
   {id:'e2', name:'Risotto alla Milanese', type:'weekend', category:'risotto', season:['all'],
     desc:'Risotto allo zafferano, dorato e ricco, il classico milanese.',
-    tags:['saffron','cheese','creamy'],
+    tags:['zafferano','formaggio','cremoso'],
     ing:[['Riso Arborio','320','g','Pantry'],['Zafferano','1','pizzico','Pantry'],['Brodo vegetale','1','l','Pantry'],['Parmigiano','60','g','Dairy & Cheese'],['Cipolla','1','pz','Produce'],['Burro','40','g','Dairy & Cheese']]},
   {id:'e3', name:'Risotto alla Zucca', type:'weekend', category:'risotto', season:['autumn','winter'],
     desc:'Risotto alla zucca arrostita, dolce e avvolgente.',
-    tags:['pumpkin','vegetables','creamy','vegetarian'],
+    tags:['zucca','verdure','cremoso','vegetariano'],
     ing:[['Riso Arborio','320','g','Pantry'],['Zucca','500','g','Produce'],['Brodo vegetale','1','l','Pantry'],['Parmigiano','50','g','Dairy & Cheese'],['Salvia','4','foglie','Produce']]},
   {id:'e4', name:'Risotto agli Asparagi', type:'weekend', category:'risotto', season:['spring'],
     desc:'Risotto agli asparagi freschi, verde e brillante.',
-    tags:['asparagus','vegetables','creamy','vegetarian'],
+    tags:['asparagi','verdure','cremoso','vegetariano'],
     ing:[['Riso Arborio','320','g','Pantry'],['Asparagi','1','mazzo','Produce'],['Brodo vegetale','1','l','Pantry'],['Parmigiano','50','g','Dairy & Cheese'],['Scalogno','1','pz','Produce']]},
   {id:'e5', name:'Risotto ai Frutti di Mare', type:'weekend', category:'risotto', season:['summer'],
     desc:'Risotto ai frutti di mare con cozze, gamberi e vongole.',
-    tags:['seafood','mussels','prawns','clams'],
+    tags:['frutti di mare','cozze','gamberoni','vongole'],
     ing:[['Riso Carnaroli','320','g','Pantry'],['Misto di mare','500','g','Meat & Fish'],['Brodo di pesce','1','l','Pantry'],['Vino bianco','100','ml','Pantry'],['Aglio','2','spicchi','Produce'],['Prezzemolo','1','mazzo','Produce']]},
   {id:'e6', name:'Minestrone', type:'weekend', category:'soup', season:['autumn','winter'],
     desc:'Zuppa di verdure sostanziosa, un po\' di tutto dall\'orto.',
-    tags:['vegetables','beans','soup','vegetarian'],
+    tags:['verdure','fagioli','zuppa','vegetariano'],
     ing:[['Verdure miste (carota, sedano, patata)','600','g','Produce'],['Fagioli cannellini','400','g','Pantry'],['Pomodori pelati','300','g','Pantry'],['Pastina','100','g','Pantry'],['Crosta di parmigiano','1','pz','Dairy & Cheese']]},
   {id:'e7', name:'Ribollita', type:'weekend', category:'soup', season:['winter'],
     desc:'Zuppa toscana di pane e cavolo nero, densa e rustica.',
-    tags:['kale','beans','bread','soup','vegetarian'],
+    tags:['cavolo nero','fagioli','pane','zuppa','vegetariano'],
     ing:[['Pane raffermo','200','g','Bread & Grains'],['Cavolo nero','1','mazzo','Produce'],['Fagioli cannellini','400','g','Pantry'],['Carota','2','pz','Produce'],['Sedano','2','coste','Produce']]},
   {id:'e8', name:'Zuppa di Lenticchie', type:'weekend', category:'soup', season:['winter'],
     desc:'Zuppa di lenticchie al rosmarino con un filo d\'olio buono.',
-    tags:['lentils','legumes','rosemary','soup','vegetarian'],
+    tags:['lenticchie','legumi','rosmarino','zuppa','vegetariano'],
     ing:[['Lenticchie','300','g','Pantry'],['Carota','2','pz','Produce'],['Sedano','2','coste','Produce'],['Rosmarino','2','rametti','Produce'],['Cipolla','1','pz','Produce']]},
   {id:'e9', name:'Panzanella', type:'weekend', category:'salad', season:['summer'],
     desc:'Insalata di pomodoro e pane raffermo, condita in modo semplice.',
-    tags:['tomato','bread','salad','vegetarian'],
+    tags:['pomodoro','pane','insalata','vegetariano'],
     ing:[['Pane raffermo','250','g','Bread & Grains'],['Pomodori','5','pz','Produce'],['Cetriolo','1','pz','Produce'],['Cipolla rossa','1','pz','Produce'],['Basilico','1','mazzo','Produce']]},
   {id:'e10', name:'Insalata Caprese', type:'weekend', category:'salad', season:['summer'],
     desc:'Pomodoro, mozzarella, basilico — non serve altro.',
-    tags:['tomato','cheese','mozzarella','basil','salad','vegetarian'],
+    tags:['pomodoro','formaggio','mozzarella','basilico','insalata','vegetariano'],
     ing:[['Pomodori','5','pz','Produce'],['Mozzarella','300','g','Dairy & Cheese'],['Basilico','1','mazzo','Produce'],['Olio d\'oliva','40','ml','Pantry']]},
   {id:'e11', name:'Insalata di Farro', type:'weekend', category:'salad', season:['spring','summer'],
     desc:'Insalata di farro con pomodorini, cetriolo e feta.',
-    tags:['grains','vegetables','cheese','salad','vegetarian'],
+    tags:['cereali','verdure','formaggio','insalata','vegetariano'],
     ing:[['Farro','250','g','Pantry'],['Pomodorini','250','g','Produce'],['Cetriolo','1','pz','Produce'],['Feta','120','g','Dairy & Cheese']]},
   {id:'e12', name:'Pollo alla Cacciatora', type:'weekend', category:'secondo', season:['all'],
     desc:'Pollo brasato alla cacciatora, con pomodoro, olive ed erbe aromatiche.',
-    tags:['chicken','tomato','olives','meat'],
+    tags:['pollo','pomodoro','olive','carne'],
     ing:[['Cosce di pollo','1','kg','Meat & Fish'],['Pomodori pelati','400','g','Pantry'],['Olive nere','80','g','Pantry'],['Cipolla','1','pz','Produce'],['Rosmarino','2','rametti','Produce']]},
   {id:'e13', name:'Osso Buco', type:'weekend', category:'secondo', season:['winter'],
     desc:'Stinco di vitello brasato con gremolata, lento e ricco.',
-    tags:['veal','meat','braised'],
+    tags:['vitello','carne','brasato'],
     ing:[['Stinco di vitello','1.2','kg','Meat & Fish'],['Carota','2','pz','Produce'],['Sedano','2','coste','Produce'],['Vino bianco','150','ml','Pantry'],['Scorza di limone','1','pz','Produce']]},
   {id:'e14', name:'Branzino al Forno', type:'weekend', category:'secondo', season:['spring','summer'],
     desc:'Branzino intero al forno con limone ed erbe aromatiche.',
-    tags:['fish','seafood','lemon'],
+    tags:['pesce','frutti di mare','limone'],
     ing:[['Branzino (intero)','1.2','kg','Meat & Fish'],['Limone','2','pz','Produce'],['Pomodorini','200','g','Produce'],['Rosmarino','2','rametti','Produce'],['Olio d\'oliva','40','ml','Pantry']]},
+
+  // ---- WEEKDAY: altri primi veloci ----
+  {id:'w17', name:'Pasta e Fagioli', type:'weekday', category:'pasta',
+    desc:'Pasta corta e fagioli borlotti in un sugo casalingo, rosmarino e un filo d\'olio.',
+    tags:['fagioli','legumi','rosmarino','vegetariano'],
+    ing:[['Ditalini','200','g','Pantry'],['Fagioli cannellini','400','g','Pantry'],['Pomodori pelati','200','g','Pantry'],['Rosmarino','2','rametti','Produce'],['Aglio','2','spicchi','Produce']]},
+  {id:'w18', name:'Pasta alla Gricia', type:'weekday', category:'pasta',
+    desc:'Guanciale croccante e pecorino, la cugina in bianco della carbonara.',
+    tags:['maiale','formaggio','pecorino','semplice'],
+    ing:[['Tonnarelli','320','g','Pantry'],['Guanciale','150','g','Meat & Fish'],['Pecorino Romano','70','g','Dairy & Cheese'],['Pepe nero','1','cucchiaini','Pantry']]},
+  {id:'w19', name:'Bucatini all\'Amatriciana', type:'weekday', category:'pasta',
+    desc:'Guanciale, pomodoro e pecorino: un classico laziale intramontabile.',
+    tags:['maiale','pomodoro','formaggio','pecorino'],
+    ing:[['Bucatini','320','g','Pantry'],['Guanciale','150','g','Meat & Fish'],['Pomodori pelati','400','g','Pantry'],['Pecorino Romano','60','g','Dairy & Cheese'],['Peperoncino in fiocchi','0.5','cucchiaini','Pantry']]},
+  {id:'w20', name:'Pasta alla Boscaiola', type:'weekday', category:'pasta',
+    desc:'Funghi e salsiccia in una salsa cremosa, un piatto d\'autunno tutto l\'anno.',
+    tags:['funghi','salsiccia','maiale','cremoso'],
+    ing:[['Penne','320','g','Pantry'],['Funghi champignon','250','g','Produce'],['Salsiccia','200','g','Meat & Fish'],['Panna','100','ml','Dairy & Cheese'],['Aglio','2','spicchi','Produce']]},
+  {id:'w21', name:'Pasta alla Checca', type:'weekday', category:'pasta',
+    desc:'Pomodorini crudi, basilico e mozzarella: niente cottura per il condimento, solo estate.',
+    tags:['pomodoro','basilico','formaggio','mozzarella','vegetariano','semplice'],
+    ing:[['Fusilli','320','g','Pantry'],['Pomodorini','400','g','Produce'],['Mozzarella','200','g','Dairy & Cheese'],['Basilico','1','mazzo','Produce'],['Olio d\'oliva','50','ml','Pantry']]},
+  {id:'w22', name:'Spaghetti alle Cozze', type:'weekday', category:'pasta',
+    desc:'Cozze aperte al vino bianco su spaghetti al pomodoro leggero.',
+    tags:['cozze','frutti di mare','pomodoro','aglio'],
+    ing:[['Spaghetti','320','g','Pantry'],['Cozze','1','kg','Meat & Fish'],['Pomodorini','200','g','Produce'],['Aglio','3','spicchi','Produce'],['Vino bianco','80','ml','Pantry']]},
+  {id:'w23', name:'Pasta con Broccoli e Salsiccia', type:'weekday', category:'pasta',
+    desc:'Broccoli stufati e salsiccia sbriciolata, un condimento sostanzioso e veloce.',
+    tags:['verdure','salsiccia','maiale','aglio'],
+    ing:[['Orecchiette','320','g','Pantry'],['Broccoli','500','g','Produce'],['Salsiccia','200','g','Meat & Fish'],['Aglio','2','spicchi','Produce'],['Peperoncino in fiocchi','0.5','cucchiaini','Pantry']]},
+  {id:'w24', name:'Pasta con Zucchine e Gamberi', type:'weekday', category:'pasta',
+    desc:'Zucchine saltate e gamberi sgusciati, fresco e delicato.',
+    tags:['zucchine','gamberi','frutti di mare','verdure'],
+    ing:[['Linguine','320','g','Pantry'],['Zucchine','3','pz','Produce'],['Gamberi','300','g','Meat & Fish'],['Aglio','2','spicchi','Produce'],['Olio d\'oliva','40','ml','Pantry']]},
+  {id:'w25', name:'Mezze Maniche al Tonno', type:'weekday', category:'pasta',
+    desc:'Tonno, pomodorini e olive, la pasta furba pronta in un lampo.',
+    tags:['tonno','pesce','pomodoro','olive','semplice'],
+    ing:[['Mezze maniche','320','g','Pantry'],['Tonno in scatola','160','g','Meat & Fish'],['Pomodorini','250','g','Produce'],['Olive nere','60','g','Pantry'],['Aglio','1','spicchio','Produce']]},
+  {id:'w26', name:'Pasta con Pomodorini e Burrata', type:'weekday', category:'pasta',
+    desc:'Pomodorini confit e burrata cremosa spezzata sul piatto caldo.',
+    tags:['pomodoro','formaggio','mozzarella','cremoso','vegetariano'],
+    ing:[['Spaghetti','320','g','Pantry'],['Pomodorini','400','g','Produce'],['Burrata','250','g','Dairy & Cheese'],['Basilico','1','mazzo','Produce'],['Olio d\'oliva','40','ml','Pantry']]},
+  {id:'w27', name:'Pasta con Speck e Radicchio', type:'weekday', category:'pasta',
+    desc:'Radicchio appassito e speck croccante in una crema leggera.',
+    tags:['maiale','verdure','cremoso'],
+    ing:[['Penne','320','g','Pantry'],['Speck','120','g','Meat & Fish'],['Radicchio','1','pz','Produce'],['Panna','80','ml','Dairy & Cheese'],['Cipolla','0.5','pz','Produce']]},
+  {id:'w28', name:'Pasta ai Carciofi', type:'weekday', category:'pasta',
+    desc:'Carciofi trifolati con aglio e pecorino, un primo di stagione primaverile.',
+    tags:['carciofi','verdure','formaggio','pecorino'],
+    ing:[['Rigatoni','320','g','Pantry'],['Carciofi','4','pz','Produce'],['Pecorino Romano','50','g','Dairy & Cheese'],['Aglio','2','spicchi','Produce'],['Prezzemolo','1','mazzo','Produce']]},
+  {id:'w29', name:'Spaghetti Aglio, Olio e Alici', type:'weekday', category:'pasta',
+    desc:'Acciughe sciolte nell\'olio con aglio e pangrattato tostato al posto del formaggio.',
+    tags:['acciughe','aglio','semplice'],
+    ing:[['Spaghetti','320','g','Pantry'],['Filetti di acciughe','6','pz','Meat & Fish'],['Aglio','3','spicchi','Produce'],['Pangrattato','30','g','Pantry'],['Prezzemolo','1','mazzo','Produce']]},
+  {id:'w30', name:'Pasta alla Siciliana', type:'weekday', category:'pasta',
+    desc:'Melanzane, pomodoro, olive e capperi: i sapori pieni del Sud in un piatto.',
+    tags:['melanzane','pomodoro','olive','verdure','vegetariano'],
+    ing:[['Penne','320','g','Pantry'],['Melanzana','1','grande','Produce'],['Pomodori pelati','400','g','Pantry'],['Olive nere','60','g','Pantry'],['Capperi','20','g','Pantry']]},
+  {id:'w31', name:'Fusilli al Pesto di Pomodori Secchi', type:'weekday', category:'pasta',
+    desc:'Un pesto rosso e intenso con pomodori secchi, mandorle e basilico.',
+    tags:['pomodoro','mandorle','basilico','vegetariano'],
+    ing:[['Fusilli','320','g','Pantry'],['Pomodori secchi','100','g','Pantry'],['Mandorle','40','g','Pantry'],['Basilico','1','mazzo','Produce'],['Parmigiano','40','g','Dairy & Cheese']]},
+  {id:'w32', name:'Pasta allo Scarpariello', type:'weekday', category:'pasta',
+    desc:'Sugo di pomodoro rapido con pecorino e provola, ricetta veloce della tradizione napoletana.',
+    tags:['pomodoro','formaggio','pecorino','semplice'],
+    ing:[['Paccheri','320','g','Pantry'],['Pomodorini','400','g','Produce'],['Pecorino Romano','50','g','Dairy & Cheese'],['Provola','80','g','Dairy & Cheese'],['Basilico','1','mazzo','Produce']]},
+  {id:'w33', name:'Rigatoni alla Zozzona', type:'weekday', category:'pasta',
+    desc:'Guanciale, salsiccia, pomodoro e uovo: il mix più goloso della cucina romana.',
+    tags:['maiale','salsiccia','pomodoro','uovo'],
+    ing:[['Rigatoni','320','g','Pantry'],['Guanciale','100','g','Meat & Fish'],['Salsiccia','150','g','Meat & Fish'],['Pomodori pelati','200','g','Pantry'],['Tuorli d\'uovo','3','pz','Dairy & Cheese']]},
+  {id:'w34', name:'Pasta con Crema di Zucchine', type:'weekday', category:'pasta',
+    desc:'Zucchine frullate in crema vellutata, un condimento leggero e delicato.',
+    tags:['zucchine','verdure','cremoso','vegetariano'],
+    ing:[['Fusilli','320','g','Pantry'],['Zucchine','4','pz','Produce'],['Parmigiano','50','g','Dairy & Cheese'],['Aglio','1','spicchio','Produce'],['Olio d\'oliva','40','ml','Pantry']]},
+
+  // ---- WEEKEND: altri risotti ----
+  {id:'e15', name:'Risotto al Radicchio e Taleggio', type:'weekend', category:'risotto', season:['autumn','winter'],
+    desc:'Radicchio amaro addolcito dal taleggio filante, un risotto dal carattere deciso.',
+    tags:['verdure','formaggio','cremoso'],
+    ing:[['Riso Carnaroli','320','g','Pantry'],['Radicchio','1','pz','Produce'],['Taleggio','120','g','Dairy & Cheese'],['Brodo vegetale','1','l','Pantry'],['Cipolla','1','pz','Produce']]},
+  {id:'e16', name:'Risotto alla Pescatora', type:'weekend', category:'risotto', season:['summer'],
+    desc:'Un risotto di mare ricco, con calamari, cozze e gamberi.',
+    tags:['frutti di mare','cozze','gamberi','calamari'],
+    ing:[['Riso Carnaroli','320','g','Pantry'],['Misto di mare','500','g','Meat & Fish'],['Brodo di pesce','1','l','Pantry'],['Vino bianco','100','ml','Pantry'],['Prezzemolo','1','mazzo','Produce']]},
+  {id:'e17', name:'Risotto agli Scampi', type:'weekend', category:'risotto', season:['summer'],
+    desc:'Scampi scottati e la loro bisque a insaporire un risotto elegante.',
+    tags:['gamberi','frutti di mare','scampi'],
+    ing:[['Riso Carnaroli','320','g','Pantry'],['Scampi','500','g','Meat & Fish'],['Brodo di pesce','1','l','Pantry'],['Vino bianco','100','ml','Pantry'],['Aglio','2','spicchi','Produce']]},
+  {id:'e18', name:'Risotto con Funghi e Salsiccia', type:'weekend', category:'risotto', season:['autumn','winter'],
+    desc:'Funghi trifolati e salsiccia sbriciolata per un risotto corposo d\'autunno.',
+    tags:['funghi','salsiccia','maiale','cremoso'],
+    ing:[['Riso Carnaroli','320','g','Pantry'],['Funghi champignon','300','g','Produce'],['Salsiccia','200','g','Meat & Fish'],['Brodo vegetale','1','l','Pantry'],['Parmigiano','50','g','Dairy & Cheese']]},
+  {id:'e19', name:'Risotto al Limone', type:'weekend', category:'risotto', season:['all'],
+    desc:'Fresco e profumato, con scorza di limone e un tocco di panna.',
+    tags:['limone','cremoso','formaggio','vegetariano'],
+    ing:[['Riso Carnaroli','320','g','Pantry'],['Limone','2','pz','Produce'],['Brodo vegetale','1','l','Pantry'],['Panna','60','ml','Dairy & Cheese'],['Parmigiano','50','g','Dairy & Cheese']]},
+
+  // ---- WEEKEND: altre zuppe e vellutate ----
+  {id:'e20', name:'Pappa al Pomodoro', type:'weekend', category:'soup', season:['summer'],
+    desc:'Pane raffermo e pomodoro, un comfort food toscano semplice e profumato di basilico.',
+    tags:['pomodoro','pane','basilico','vegetariano','zuppa'],
+    ing:[['Pane raffermo','300','g','Bread & Grains'],['Pomodori pelati','500','g','Pantry'],['Aglio','2','spicchi','Produce'],['Basilico','1','mazzo','Produce'],['Olio d\'oliva','50','ml','Pantry']]},
+  {id:'e21', name:'Crema di Zucca', type:'weekend', category:'soup', season:['autumn','winter'],
+    desc:'Vellutata dolce e avvolgente, servita con crostini dorati.',
+    tags:['zucca','verdure','zuppa','vegetariano'],
+    ing:[['Zucca','700','g','Produce'],['Brodo vegetale','800','ml','Pantry'],['Cipolla','1','pz','Produce'],['Pane raffermo','100','g','Bread & Grains'],['Olio d\'oliva','30','ml','Pantry']]},
+  {id:'e22', name:'Vellutata di Broccoli', type:'weekend', category:'soup', season:['autumn','winter'],
+    desc:'Cremosa e verde, resa più ricca da patate e un filo di parmigiano.',
+    tags:['verdure','zuppa','vegetariano','formaggio'],
+    ing:[['Broccoli','600','g','Produce'],['Patate','2','pz','Produce'],['Brodo vegetale','800','ml','Pantry'],['Parmigiano','40','g','Dairy & Cheese'],['Cipolla','1','pz','Produce']]},
+  {id:'e23', name:'Zuppa di Farro e Ceci', type:'weekend', category:'soup', season:['autumn','winter'],
+    desc:'Farro e ceci in un brodo rustico profumato di rosmarino.',
+    tags:['farro','ceci','legumi','rosmarino','vegetariano','zuppa'],
+    ing:[['Farro','250','g','Pantry'],['Ceci','400','g','Pantry'],['Rosmarino','2','rametti','Produce'],['Sedano','2','coste','Produce'],['Carota','2','pz','Produce']]},
+  {id:'e24', name:'Passato di Verdure', type:'weekend', category:'soup', season:['autumn','winter'],
+    desc:'Un passato genuino di verdure miste, leggero e confortante.',
+    tags:['verdure','zuppa','vegetariano'],
+    ing:[['Verdure miste (carota, sedano, patata)','700','g','Produce'],['Brodo vegetale','700','ml','Pantry'],['Cipolla','1','pz','Produce'],['Olio d\'oliva','30','ml','Pantry']]},
+  {id:'e25', name:'Zuppa di Cipolle Gratinata', type:'weekend', category:'soup', season:['winter'],
+    desc:'Cipolle stufate a lungo, brodo saporito e una gratinatura di pane e formaggio.',
+    tags:['cipolla','pane','formaggio','zuppa'],
+    ing:[['Cipolla','5','pz','Produce'],['Brodo vegetale','1','l','Pantry'],['Pane raffermo','150','g','Bread & Grains'],['Parmigiano','80','g','Dairy & Cheese'],['Burro','30','g','Dairy & Cheese']]},
+
+  // ---- WEEKEND: altre insalate ----
+  {id:'e26', name:'Insalata di Farro, Ceci e Salmone', type:'weekend', category:'salad', season:['spring','summer'],
+    desc:'Farro e ceci con salmone scottato, un\'insalatona completa e nutriente.',
+    tags:['farro','ceci','salmone','pesce','insalata'],
+    ing:[['Farro','250','g','Pantry'],['Ceci','300','g','Pantry'],['Salmone','300','g','Meat & Fish'],['Pomodorini','200','g','Produce'],['Limone','1','pz','Produce']]},
+  {id:'e27', name:'Insalata di Polpo e Patate', type:'weekend', category:'salad', season:['summer'],
+    desc:'Polpo tenero e patate lesse, condite con olio, limone e prezzemolo.',
+    tags:['polpo','frutti di mare','patate','insalata'],
+    ing:[['Polpo','1','kg','Meat & Fish'],['Patate','4','pz','Produce'],['Prezzemolo','1','mazzo','Produce'],['Limone','1','pz','Produce'],['Olio d\'oliva','40','ml','Pantry']]},
+  {id:'e28', name:'Insalata di Riso', type:'weekend', category:'salad', season:['summer'],
+    desc:'Riso freddo con verdure, olive e formaggio a cubetti, il classico da spiaggia.',
+    tags:['riso','verdure','formaggio','insalata','vegetariano'],
+    ing:[['Riso','320','g','Pantry'],['Pomodorini','200','g','Produce'],['Mais','150','g','Pantry'],['Olive nere','60','g','Pantry'],['Formaggio a cubetti','150','g','Dairy & Cheese']]},
+  {id:'e29', name:'Insalata Greca', type:'weekend', category:'salad', season:['summer'],
+    desc:'Cetrioli, pomodori, feta e olive nere, fresca e mediterranea.',
+    tags:['formaggio','feta','olive','verdure','insalata','vegetariano'],
+    ing:[['Cetriolo','2','pz','Produce'],['Pomodori','4','pz','Produce'],['Feta','200','g','Dairy & Cheese'],['Olive nere','80','g','Pantry'],['Cipolla rossa','0.5','pz','Produce']]},
+  {id:'e30', name:'Insalata di Finocchi e Arance', type:'weekend', category:'salad', season:['winter'],
+    desc:'Finocchi croccanti e arance dolci, un\'insalata invernale rinfrescante.',
+    tags:['finocchi','arancia','insalata','vegetariano'],
+    ing:[['Finocchi','2','pz','Produce'],['Arance','2','pz','Produce'],['Olive nere','40','g','Pantry'],['Olio d\'oliva','30','ml','Pantry']]},
+  {id:'e31', name:'Insalata di Pollo e Avocado', type:'weekend', category:'salad', season:['all'],
+    desc:'Pollo grigliato, avocado cremoso e verdure fresche, un\'insalata piatto unico.',
+    tags:['pollo','avocado','insalata'],
+    ing:[['Petto di pollo','400','g','Meat & Fish'],['Avocado','2','pz','Produce'],['Pomodorini','200','g','Produce'],['Insalata mista','150','g','Produce'],['Limone','1','pz','Produce']]},
+
+  // ---- WEEKEND: altri secondi ----
+  {id:'e32', name:'Spezzatino di Manzo con Piselli', type:'weekend', category:'secondo', season:['autumn','winter'],
+    desc:'Bocconcini di manzo brasati a lungo con piselli, un classico della domenica.',
+    tags:['manzo','carne','piselli','brasato'],
+    ing:[['Spezzatino di manzo','800','g','Meat & Fish'],['Piselli','300','g','Produce'],['Pomodori pelati','300','g','Pantry'],['Cipolla','1','pz','Produce'],['Vino bianco','100','ml','Pantry']]},
+  {id:'e33', name:'Polpette al Sugo', type:'weekend', category:'secondo', season:['all'],
+    desc:'Polpette di carne morbide, cotte lentamente nel sugo di pomodoro.',
+    tags:['manzo','carne','pomodoro','uovo'],
+    ing:[['Carne macinata','600','g','Meat & Fish'],['Pomodori pelati','500','g','Pantry'],['Uova','1','pz','Dairy & Cheese'],['Pangrattato','60','g','Pantry'],['Parmigiano','40','g','Dairy & Cheese']]},
+  {id:'e34', name:'Saltimbocca alla Romana', type:'weekend', category:'secondo', season:['all'],
+    desc:'Fettine di vitello con prosciutto crudo e salvia, sfumate al vino bianco.',
+    tags:['vitello','carne','prosciutto','salvia'],
+    ing:[['Fettine di vitello','600','g','Meat & Fish'],['Prosciutto crudo','120','g','Meat & Fish'],['Salvia','10','foglie','Produce'],['Vino bianco','100','ml','Pantry'],['Burro','30','g','Dairy & Cheese']]},
+  {id:'e35', name:'Scaloppine ai Funghi', type:'weekend', category:'secondo', season:['autumn','winter'],
+    desc:'Fettine di carne in una salsa cremosa ai funghi porcini.',
+    tags:['carne','funghi','cremoso'],
+    ing:[['Fettine di vitello','600','g','Meat & Fish'],['Funghi champignon','300','g','Produce'],['Panna','100','ml','Dairy & Cheese'],['Vino bianco','80','ml','Pantry'],['Farina','20','g','Pantry']]},
+  {id:'e36', name:'Calamari Ripieni', type:'weekend', category:'secondo', season:['summer'],
+    desc:'Calamari farciti con pane, prezzemolo e aglio, cotti in un sugo leggero.',
+    tags:['calamari','frutti di mare','pane'],
+    ing:[['Calamari','800','g','Meat & Fish'],['Pane raffermo','100','g','Bread & Grains'],['Prezzemolo','1','mazzo','Produce'],['Aglio','3','spicchi','Produce'],['Pomodorini','200','g','Produce']]},
+  {id:'e37', name:'Merluzzo al Forno con Patate', type:'weekend', category:'secondo', season:['winter'],
+    desc:'Filetti di merluzzo al forno su un letto di patate profumate al rosmarino.',
+    tags:['pesce','merluzzo','patate'],
+    ing:[['Merluzzo','600','g','Meat & Fish'],['Patate','4','pz','Produce'],['Pomodorini','200','g','Produce'],['Rosmarino','2','rametti','Produce'],['Olio d\'oliva','40','ml','Pantry']]},
+  {id:'e38', name:'Pollo al Limone Croccante', type:'weekend', category:'secondo', season:['all'],
+    desc:'Bocconcini di pollo dorati in padella con una glassa agrodolce al limone.',
+    tags:['pollo','carne','limone'],
+    ing:[['Petto di pollo','600','g','Meat & Fish'],['Limone','2','pz','Produce'],['Farina','40','g','Pantry'],['Miele','2','cucchiaini','Pantry'],['Burro','20','g','Dairy & Cheese']]},
+  {id:'e39', name:'Parmigiana di Melanzane', type:'weekend', category:'secondo', season:['summer'],
+    desc:'Strati di melanzane fritte, pomodoro e mozzarella filante gratinati al forno.',
+    tags:['melanzane','pomodoro','formaggio','mozzarella','vegetariano'],
+    ing:[['Melanzane','2','grande','Produce'],['Pomodori pelati','500','g','Pantry'],['Mozzarella','300','g','Dairy & Cheese'],['Parmigiano','60','g','Dairy & Cheese'],['Basilico','1','mazzo','Produce']]},
+
+  // ---- WEEKDAY: terza ondata di primi veloci ----
+  {id:'w35', name:'Spaghetti alla Nerano', type:'weekday', category:'pasta',
+    desc:'Zucchine fritte che si sciolgono in una crema di provolone, un classico campano estivo.',
+    tags:['zucchine','formaggio','cremoso','vegetariano'],
+    ing:[['Spaghetti','320','g','Pantry'],['Zucchine','4','pz','Produce'],['Provolone','100','g','Dairy & Cheese'],['Basilico','1','mazzo','Produce'],['Olio d\'oliva','60','ml','Pantry']]},
+  {id:'w36', name:'Pasta alla Norcina', type:'weekday', category:'pasta',
+    desc:'Salsiccia sbriciolata in una crema di pecorino, un primo umbro corposo e veloce.',
+    tags:['salsiccia','maiale','formaggio','pecorino','cremoso'],
+    ing:[['Rigatoni','320','g','Pantry'],['Salsiccia','250','g','Meat & Fish'],['Panna','100','ml','Dairy & Cheese'],['Pecorino Romano','50','g','Dairy & Cheese'],['Vino bianco','60','ml','Pantry']]},
+  {id:'w37', name:'Pasta e Cavolfiore', type:'weekday', category:'pasta',
+    desc:'Cavolfiore stufato con aglio e acciuga, un primo rustico e saporito.',
+    tags:['verdure','aglio','acciughe','pesce'],
+    ing:[['Ditalini','300','g','Pantry'],['Cavolfiore','1','pz','Produce'],['Aglio','2','spicchi','Produce'],['Filetti di acciughe','3','pz','Meat & Fish'],['Peperoncino in fiocchi','0.5','cucchiaini','Pantry']]},
+  {id:'w38', name:'Pasta Fredda con Melanzane', type:'weekday', category:'pasta',
+    desc:'Pasta fredda con melanzane grigliate e pomodorini, perfetta per le giornate calde.',
+    tags:['melanzane','pomodoro','vegetariano','semplice'],
+    ing:[['Fusilli','320','g','Pantry'],['Melanzane','1','grande','Produce'],['Pomodorini','250','g','Produce'],['Basilico','1','mazzo','Produce'],['Olio d\'oliva','50','ml','Pantry']]},
+  {id:'w39', name:'Spaghetti alla Corte d\'Assise', type:'weekday', category:'pasta',
+    desc:'Sugo piccante calabrese con capperi e olive, deciso e saporito.',
+    tags:['pomodoro','piccante','olive','capperi'],
+    ing:[['Spaghetti','320','g','Pantry'],['Pomodori pelati','400','g','Pantry'],['Olive nere','60','g','Pantry'],['Capperi','20','g','Pantry'],['Peperoncino in fiocchi','1','cucchiaini','Pantry']]},
+  {id:'w40', name:'Riso Freddo con Zucchine', type:'weekday', category:'pasta',
+    desc:'Riso freddo con zucchine saltate e parmigiano, semplice alternativa estiva alla pasta.',
+    tags:['riso','zucchine','formaggio','vegetariano','semplice'],
+    ing:[['Riso','300','g','Pantry'],['Zucchine','3','pz','Produce'],['Parmigiano','40','g','Dairy & Cheese'],['Olio d\'oliva','40','ml','Pantry'],['Basilico','1','mazzo','Produce']]},
+  {id:'w41', name:'Pasta alla Trapanese', type:'weekday', category:'pasta',
+    desc:'Un pesto crudo di pomodori freschi e mandorle, sapore siciliano pronto in pochi minuti.',
+    tags:['pomodoro','mandorle','basilico','vegetariano','semplice'],
+    ing:[['Fusilli','320','g','Pantry'],['Pomodorini','400','g','Produce'],['Mandorle','50','g','Pantry'],['Basilico','1','mazzo','Produce'],['Aglio','1','spicchio','Produce']]},
+  {id:'w42', name:'Spaghetti Alici e Limone', type:'weekday', category:'pasta',
+    desc:'Acciughe sciolte nell\'olio e scorza di limone, fresco e sfizioso.',
+    tags:['acciughe','limone','pesce','semplice'],
+    ing:[['Spaghetti','320','g','Pantry'],['Filetti di acciughe','6','pz','Meat & Fish'],['Limone','1','pz','Produce'],['Aglio','2','spicchi','Produce'],['Prezzemolo','1','mazzo','Produce']]},
+  {id:'w43', name:'Calamarata Estiva', type:'weekday', category:'pasta',
+    desc:'Calamari e pomodorini freschi in un formato di pasta che cattura bene il condimento.',
+    tags:['calamari','frutti di mare','pomodoro'],
+    ing:[['Calamarata','320','g','Pantry'],['Calamari','300','g','Meat & Fish'],['Pomodorini','300','g','Produce'],['Aglio','2','spicchi','Produce'],['Prezzemolo','1','mazzo','Produce']]},
+  {id:'w44', name:'Pasta con Zucca e Salsiccia', type:'weekday', category:'pasta',
+    desc:'Zucca dolce e salsiccia saporita, un condimento avvolgente per i giorni più freddi.',
+    tags:['zucca','salsiccia','maiale','cremoso'],
+    ing:[['Penne','320','g','Pantry'],['Zucca','400','g','Produce'],['Salsiccia','200','g','Meat & Fish'],['Cipolla','1','pz','Produce'],['Parmigiano','40','g','Dairy & Cheese']]},
+  {id:'w45', name:'Pasta al Pesto di Rucola', type:'weekday', category:'pasta',
+    desc:'Un pesto pepato di rucola e pinoli, alternativa vivace al classico basilico.',
+    tags:['verdure','pinoli','formaggio','vegetariano'],
+    ing:[['Fusilli','320','g','Pantry'],['Rucola','100','g','Produce'],['Pinoli','30','g','Pantry'],['Parmigiano','50','g','Dairy & Cheese'],['Olio d\'oliva','60','ml','Pantry']]},
+  {id:'w46', name:'Spaghetti al Tonno Piccante', type:'weekday', category:'pasta',
+    desc:'Tonno, pomodoro e un tocco di peperoncino, il classico della cucina svelta.',
+    tags:['tonno','pesce','pomodoro','piccante'],
+    ing:[['Spaghetti','320','g','Pantry'],['Tonno in scatola','160','g','Meat & Fish'],['Pomodori pelati','300','g','Pantry'],['Aglio','2','spicchi','Produce'],['Peperoncino in fiocchi','0.5','cucchiaini','Pantry']]},
+
+  // ---- WEEKEND: terza ondata ----
+  {id:'e40', name:'Risotto Asparagi e Piselli', type:'weekend', category:'risotto', season:['spring'],
+    desc:'Un risotto verde e delicato, con la dolcezza di asparagi e piselli freschi.',
+    tags:['asparagi','piselli','verdure','cremoso','vegetariano'],
+    ing:[['Riso Carnaroli','320','g','Pantry'],['Asparagi','1','mazzo','Produce'],['Piselli','200','g','Produce'],['Brodo vegetale','1','l','Pantry'],['Parmigiano','50','g','Dairy & Cheese']]},
+  {id:'e41', name:'Risotto Gamberi e Zucchine', type:'weekend', category:'risotto', season:['summer'],
+    desc:'Gamberi e zucchine in un risotto leggero, senza mantecatura finale al formaggio.',
+    tags:['gamberi','frutti di mare','zucchine'],
+    ing:[['Riso Carnaroli','320','g','Pantry'],['Gamberi','350','g','Meat & Fish'],['Zucchine','2','pz','Produce'],['Brodo vegetale','1','l','Pantry'],['Aglio','1','spicchio','Produce']]},
+  {id:'e42', name:'Zuppa del Canavese', type:'weekend', category:'soup', season:['winter'],
+    desc:'Pane, cavolo e formaggio gratinati in una zuppa contadina piemontese.',
+    tags:['pane','verdure','formaggio','zuppa'],
+    ing:[['Pane raffermo','200','g','Bread & Grains'],['Verza','0.5','pz','Produce'],['Brodo di carne','800','ml','Pantry'],['Formaggio a cubetti','150','g','Dairy & Cheese'],['Burro','20','g','Dairy & Cheese']]},
+  {id:'e43', name:'Parmigiana di Carciofi', type:'weekend', category:'secondo', season:['spring'],
+    desc:'Una variante primaverile della parmigiana classica, con carciofi al posto delle melanzane.',
+    tags:['carciofi','formaggio','mozzarella','vegetariano'],
+    ing:[['Carciofi','6','pz','Produce'],['Pomodori pelati','300','g','Pantry'],['Mozzarella','200','g','Dairy & Cheese'],['Parmigiano','50','g','Dairy & Cheese'],['Limone','1','pz','Produce']]},
+  {id:'e44', name:'Melanzane Ripiene', type:'weekend', category:'secondo', season:['summer'],
+    desc:'Melanzane farcite con riso e verdure, un secondo vegetariano ricco.',
+    tags:['melanzane','riso','verdure','vegetariano'],
+    ing:[['Melanzane','4','pz','Produce'],['Riso','150','g','Pantry'],['Pomodorini','200','g','Produce'],['Parmigiano','40','g','Dairy & Cheese'],['Basilico','1','mazzo','Produce']]},
+  {id:'e45', name:'Peperonata con Patate', type:'weekend', category:'secondo', season:['summer'],
+    desc:'Peperoni morbidi e patate tenere in un sugo di pomodoro, un classico vegano estivo.',
+    tags:['verdure','patate','pomodoro','vegetariano'],
+    ing:[['Peperoni','4','pz','Produce'],['Patate','3','pz','Produce'],['Pomodori pelati','300','g','Pantry'],['Cipolla','1','pz','Produce'],['Olio d\'oliva','40','ml','Pantry']]},
+  {id:'e46', name:'Insalata di Farro con Provolone', type:'weekend', category:'salad', season:['summer'],
+    desc:'Farro con provolone dolce e verdure saltate, croccante e sfiziosa.',
+    tags:['farro','formaggio','verdure','insalata','vegetariano'],
+    ing:[['Farro','250','g','Pantry'],['Provolone','120','g','Dairy & Cheese'],['Zucchine','2','pz','Produce'],['Pomodorini','150','g','Produce'],['Olio d\'oliva','30','ml','Pantry']]},
+  {id:'e47', name:'Insalata di Uova Sode, Asparagi e Rucola', type:'weekend', category:'salad', season:['spring'],
+    desc:'Uova sode, asparagi croccanti e rucola pepata, un\'insalata proteica e fresca.',
+    tags:['uovo','asparagi','verdure','insalata'],
+    ing:[['Uova','4','pz','Dairy & Cheese'],['Asparagi','1','mazzo','Produce'],['Rucola','100','g','Produce'],['Olio d\'oliva','30','ml','Pantry'],['Limone','1','pz','Produce']]},
+  {id:'e48', name:'Insalata di Mare con Patate', type:'weekend', category:'salad', season:['summer'],
+    desc:'Frutti di mare misti e patate lesse, delicata e leggera.',
+    tags:['frutti di mare','patate','insalata'],
+    ing:[['Misto di mare','500','g','Meat & Fish'],['Patate','3','pz','Produce'],['Pomodorini','200','g','Produce'],['Prezzemolo','1','mazzo','Produce'],['Limone','1','pz','Produce']]},
+  {id:'e49', name:'Cavolfiore alla Siciliana', type:'weekend', category:'secondo', season:['winter'],
+    desc:'Cavolfiore brasato con olive, capperi e pomodoro, sapori decisi del Sud.',
+    tags:['verdure','olive','capperi','pomodoro','vegetariano'],
+    ing:[['Cavolfiore','1','pz','Produce'],['Pomodori pelati','300','g','Pantry'],['Olive nere','60','g','Pantry'],['Capperi','20','g','Pantry'],['Cipolla','1','pz','Produce']]},
+  {id:'e50', name:'Zucchine Ripiene di Riso', type:'weekend', category:'secondo', season:['summer'],
+    desc:'Zucchine tonde farcite con riso e verdurine, un piatto estivo fresco e leggero.',
+    tags:['zucchine','riso','verdure','vegetariano'],
+    ing:[['Zucchine tonde','4','pz','Produce'],['Riso','150','g','Pantry'],['Pomodorini','150','g','Produce'],['Parmigiano','40','g','Dairy & Cheese'],['Basilico','1','mazzo','Produce']]},
+  {id:'e51', name:'Gamberoni con Avocado e Lime', type:'weekend', category:'salad', season:['summer'],
+    desc:'Gamberoni scottati con avocado cremoso e lime, fresco e scenografico.',
+    tags:['gamberi','frutti di mare','avocado','insalata'],
+    ing:[['Gamberoni','400','g','Meat & Fish'],['Avocado','2','pz','Produce'],['Lime','2','pz','Produce'],['Insalata mista','100','g','Produce'],['Olio d\'oliva','30','ml','Pantry']]},
+  {id:'e52', name:'Vellutata di Ceci', type:'weekend', category:'soup', season:['autumn','winter'],
+    desc:'Crema di ceci con rosmarino, semplice e nutriente, servita con crostini.',
+    tags:['ceci','legumi','rosmarino','vegetariano','zuppa'],
+    ing:[['Ceci','500','g','Pantry'],['Brodo vegetale','700','ml','Pantry'],['Rosmarino','2','rametti','Produce'],['Pane raffermo','100','g','Bread & Grains'],['Olio d\'oliva','30','ml','Pantry']]},
+  {id:'e53', name:'Polpettone al Sugo', type:'weekend', category:'secondo', season:['all'],
+    desc:'Un polpettone morbido e succulento, cotto lentamente nel sugo di pomodoro.',
+    tags:['manzo','carne','pomodoro','uovo'],
+    ing:[['Carne macinata','700','g','Meat & Fish'],['Uova','1','pz','Dairy & Cheese'],['Pangrattato','60','g','Pantry'],['Pomodori pelati','400','g','Pantry'],['Parmigiano','50','g','Dairy & Cheese']]},
+  {id:'e54', name:'Fichi, Gorgonzola e Prosciutto', type:'weekend', category:'salad', season:['summer'],
+    desc:'Fichi dolci, gorgonzola cremoso e prosciutto crudo, un\'insalata di grande equilibrio.',
+    tags:['formaggio','prosciutto','insalata','vegetariano'],
+    ing:[['Fichi freschi','6','pz','Produce'],['Gorgonzola','150','g','Dairy & Cheese'],['Prosciutto crudo','100','g','Meat & Fish'],['Rucola','80','g','Produce'],['Olio d\'oliva','20','ml','Pantry']]},
+
+  // ---- WEEKEND: piatti semplici e leggeri, secondi freddi ----
+  {id:'e55', name:'Insalatona con Tonno e Uova', type:'weekend', category:'salad', season:['all'],
+    desc:'Insalata mista con tonno e uova sode, un piatto unico semplice e nutriente.',
+    tags:['insalata','tonno','pesce','uovo'],
+    ing:[['Insalata mista','200','g','Produce'],['Tonno in scatola','160','g','Meat & Fish'],['Uova','3','pz','Dairy & Cheese'],['Pomodorini','200','g','Produce'],['Olio d\'oliva','30','ml','Pantry']]},
+  {id:'e56', name:'Manzo Freddo con Insalata e Pomodori', type:'weekend', category:'secondo', season:['all'],
+    desc:'Fettine di manzo lesso servite fredde con insalata fresca e pomodori, un secondo leggero e digeribile.',
+    tags:['manzo','carne','insalata','pomodoro'],
+    ing:[['Manzo lesso','300','g','Meat & Fish'],['Insalata mista','150','g','Produce'],['Pomodori','3','pz','Produce'],['Olio d\'oliva','30','ml','Pantry'],['Limone','1','pz','Produce']]},
+  {id:'e57', name:'Polpettone di Tonno', type:'weekend', category:'secondo', season:['all'],
+    desc:'Un polpettone freddo a base di tonno e patate, morbido e delicato, ottimo anche il giorno dopo.',
+    tags:['tonno','pesce','uovo','patate'],
+    ing:[['Tonno in scatola','300','g','Meat & Fish'],['Patate','3','pz','Produce'],['Uova','2','pz','Dairy & Cheese'],['Pangrattato','40','g','Pantry'],['Prezzemolo','1','mazzo','Produce']]},
+  {id:'e58', name:'Vitello Tonnato', type:'weekend', category:'secondo', season:['all'],
+    desc:'Fettine sottili di vitello ricoperte da una salsa cremosa al tonno, capperi e acciughe: un classico piemontese servito freddo.',
+    tags:['vitello','carne','tonno','pesce','uovo'],
+    ing:[['Vitello (girello)','600','g','Meat & Fish'],['Tonno in scatola','150','g','Meat & Fish'],['Maionese','150','g','Pantry'],['Capperi','30','g','Pantry'],['Filetti di acciughe','4','pz','Meat & Fish']]},
+
+  // ---- WEEKEND: altri piatti freddi e leggeri ----
+  {id:'e59', name:'Insalata di Pollo Classica', type:'weekend', category:'salad', season:['summer'],
+    desc:'Petto di pollo lesso, sedano e maionese leggera: la ricetta che ogni famiglia italiana ha nella propria versione.',
+    tags:['pollo','carne','insalata','uovo'],
+    ing:[['Petto di pollo','400','g','Meat & Fish'],['Sedano','2','coste','Produce'],['Maionese','100','g','Pantry'],['Limone','1','pz','Produce'],['Prezzemolo','1','mazzo','Produce']]},
+  {id:'e60', name:'Insalata di Pollo e Patate', type:'weekend', category:'salad', season:['summer'],
+    desc:'Un piatto unico freddo facile e completo, pollo e patate legati da una maionese leggera.',
+    tags:['pollo','carne','patate','insalata','uovo'],
+    ing:[['Petto di pollo','350','g','Meat & Fish'],['Patate','3','pz','Produce'],['Maionese','80','g','Pantry'],['Pomodorini','150','g','Produce'],['Prezzemolo','1','mazzo','Produce']]},
+  {id:'e61', name:'Bresaola con Rucola e Grana', type:'weekend', category:'secondo', season:['all'],
+    desc:'Fettine di bresaola con rucola e scaglie di grana, un secondo freddo pronto in cinque minuti.',
+    tags:['carne','formaggio','insalata'],
+    ing:[['Bresaola','200','g','Meat & Fish'],['Rucola','100','g','Produce'],['Grana Padano','40','g','Dairy & Cheese'],['Limone','1','pz','Produce'],['Olio d\'oliva','20','ml','Pantry']]},
+  {id:'e62', name:'Carpaccio di Manzo con Rucola e Grana', type:'weekend', category:'secondo', season:['all'],
+    desc:'Fettine sottilissime di manzo crudo con rucola, grana e limone, un classico elegante e veloce.',
+    tags:['manzo','carne','formaggio'],
+    ing:[['Manzo (carpaccio)','300','g','Meat & Fish'],['Rucola','80','g','Produce'],['Grana Padano','40','g','Dairy & Cheese'],['Limone','1','pz','Produce'],['Olio d\'oliva','30','ml','Pantry']]},
+  {id:'e63', name:'Insalata di Polpo con Pomodorini', type:'weekend', category:'salad', season:['summer'],
+    desc:'Polpo tenero, pomodorini dolci e olive, un\'insalata di mare fresca e senza patate.',
+    tags:['polpo','frutti di mare','pomodoro','olive','insalata'],
+    ing:[['Polpo','800','g','Meat & Fish'],['Pomodorini','250','g','Produce'],['Olive nere','40','g','Pantry'],['Prezzemolo','1','mazzo','Produce'],['Olio d\'oliva','30','ml','Pantry']]},
+  {id:'e64', name:'Pomodori Ripieni di Tonno', type:'weekend', category:'secondo', season:['summer'],
+    desc:'Pomodori freschi svuotati e farciti con tonno e maionese, senza cottura.',
+    tags:['tonno','pesce','pomodoro','uovo'],
+    ing:[['Pomodori','6','pz','Produce'],['Tonno in scatola','200','g','Meat & Fish'],['Maionese','60','g','Pantry'],['Capperi','15','g','Pantry'],['Prezzemolo','1','mazzo','Produce']]},
+  {id:'e65', name:'Arrosto Freddo di Maiale con Salsa alle Zucchine', type:'weekend', category:'secondo', season:['all'],
+    desc:'Fettine di arrosto di maiale servite fredde con una salsa fresca alle zucchine.',
+    tags:['maiale','carne','zucchine','cremoso'],
+    ing:[['Lonza di maiale','700','g','Meat & Fish'],['Zucchine','3','pz','Produce'],['Panna','60','ml','Dairy & Cheese'],['Aglio','1','spicchio','Produce'],['Olio d\'oliva','30','ml','Pantry']]},
+  {id:'e66', name:'Frittata di Verdure', type:'weekend', category:'secondo', season:['all'],
+    desc:'Zucchine e peperoni legati da uova morbide, buona calda o fredda.',
+    tags:['uovo','verdure','vegetariano'],
+    ing:[['Uova','6','pz','Dairy & Cheese'],['Zucchine','2','pz','Produce'],['Peperoni','1','pz','Produce'],['Parmigiano','30','g','Dairy & Cheese'],['Cipolla','0.5','pz','Produce']]},
+  {id:'e67', name:'Cotoletta alla Palermitana', type:'weekend', category:'secondo', season:['all'],
+    desc:'Fettine di vitello panate senza uovo e cotte alla piastra, croccanti ma leggere.',
+    tags:['vitello','carne'],
+    ing:[['Fettine di vitello','500','g','Meat & Fish'],['Pangrattato','80','g','Pantry'],['Parmigiano','30','g','Dairy & Cheese'],['Prezzemolo','1','mazzo','Produce'],['Limone','1','pz','Produce']]},
+  {id:'e68', name:'Carpaccio di Zucchine con Tonno', type:'weekend', category:'secondo', season:['summer'],
+    desc:'Zucchine crude affettate sottili con tonno e limone, un piatto fresco e senza cottura.',
+    tags:['zucchine','tonno','pesce','verdure'],
+    ing:[['Zucchine','3','pz','Produce'],['Tonno in scatola','150','g','Meat & Fish'],['Limone','1','pz','Produce'],['Olio d\'oliva','30','ml','Pantry'],['Menta','1','mazzo','Produce']]},
+  {id:'e69', name:'Insalata Eoliana con Tonno', type:'weekend', category:'salad', season:['summer'],
+    desc:'Tonno, pomodori secchi, olive e capperi: i sapori intensi delle isole in un\'insalata.',
+    tags:['tonno','pesce','olive','capperi','insalata'],
+    ing:[['Tonno in scatola','160','g','Meat & Fish'],['Pomodori secchi','60','g','Pantry'],['Olive nere','50','g','Pantry'],['Capperi','20','g','Pantry'],['Insalata mista','150','g','Produce']]},
+  {id:'e70', name:'Petto di Pollo ai Ferri con Insalata', type:'weekend', category:'secondo', season:['all'],
+    desc:'Pollo grigliato semplice, accompagnato da un\'insalata fresca: il secondo più leggero di tutti.',
+    tags:['pollo','carne','insalata'],
+    ing:[['Petto di pollo','500','g','Meat & Fish'],['Insalata mista','150','g','Produce'],['Limone','1','pz','Produce'],['Olio d\'oliva','20','ml','Pantry'],['Rosmarino','1','rametti','Produce']]},
 ];
 
 const DAYS = ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
@@ -797,37 +1253,72 @@ const NUTRITION = {
   e7:{kcal:380, fiber:11, fat:10}, e8:{kcal:360, fiber:12, fat:8}, e9:{kcal:340, fiber:6, fat:14},
   e10:{kcal:380, fiber:2, fat:26}, e11:{kcal:420, fiber:7, fat:14}, e12:{kcal:480, fiber:3, fat:22},
   e13:{kcal:560, fiber:2, fat:24}, e14:{kcal:380, fiber:1, fat:16},
+  w17:{kcal:460, fiber:9, fat:10}, w18:{kcal:580, fiber:2, fat:26}, w19:{kcal:560, fiber:3, fat:22},
+  w20:{kcal:610, fiber:3, fat:28}, w21:{kcal:520, fiber:3, fat:18}, w22:{kcal:490, fiber:2, fat:10},
+  w23:{kcal:540, fiber:6, fat:20}, w24:{kcal:480, fiber:3, fat:12}, w25:{kcal:510, fiber:3, fat:14},
+  w26:{kcal:600, fiber:3, fat:26}, w27:{kcal:570, fiber:2, fat:24}, w28:{kcal:490, fiber:5, fat:16},
+  w29:{kcal:480, fiber:2, fat:16}, w30:{kcal:500, fiber:6, fat:16}, w31:{kcal:590, fiber:4, fat:24},
+  w32:{kcal:540, fiber:3, fat:18}, w33:{kcal:640, fiber:3, fat:28}, w34:{kcal:490, fiber:3, fat:16},
+  e15:{kcal:540, fiber:2, fat:18}, e16:{kcal:530, fiber:2, fat:12}, e17:{kcal:520, fiber:1, fat:12},
+  e18:{kcal:560, fiber:3, fat:18}, e19:{kcal:500, fiber:1, fat:14}, e20:{kcal:340, fiber:5, fat:12},
+  e21:{kcal:280, fiber:6, fat:8}, e22:{kcal:260, fiber:7, fat:8}, e23:{kcal:400, fiber:11, fat:8},
+  e24:{kcal:220, fiber:8, fat:6}, e25:{kcal:380, fiber:3, fat:16}, e26:{kcal:480, fiber:8, fat:16},
+  e27:{kcal:360, fiber:4, fat:14}, e28:{kcal:420, fiber:3, fat:14}, e29:{kcal:340, fiber:3, fat:24},
+  e30:{kcal:180, fiber:5, fat:8}, e31:{kcal:380, fiber:6, fat:20}, e32:{kcal:480, fiber:5, fat:20},
+  e33:{kcal:460, fiber:3, fat:22}, e34:{kcal:420, fiber:1, fat:22}, e35:{kcal:460, fiber:2, fat:24},
+  e36:{kcal:400, fiber:2, fat:14}, e37:{kcal:380, fiber:4, fat:12}, e38:{kcal:440, fiber:1, fat:18},
+  e39:{kcal:480, fiber:5, fat:26},
+  w35:{kcal:580, fiber:3, fat:24}, w36:{kcal:610, fiber:2, fat:28}, w37:{kcal:450, fiber:7, fat:14},
+  w38:{kcal:480, fiber:4, fat:16}, w39:{kcal:490, fiber:4, fat:14}, w40:{kcal:460, fiber:2, fat:12},
+  w41:{kcal:540, fiber:4, fat:20}, w42:{kcal:470, fiber:2, fat:16}, w43:{kcal:460, fiber:2, fat:10},
+  w44:{kcal:520, fiber:4, fat:16}, w45:{kcal:560, fiber:3, fat:24}, w46:{kcal:490, fiber:3, fat:14},
+  e40:{kcal:480, fiber:5, fat:12}, e41:{kcal:460, fiber:2, fat:8}, e42:{kcal:360, fiber:3, fat:14},
+  e43:{kcal:340, fiber:6, fat:18}, e44:{kcal:320, fiber:6, fat:10}, e45:{kcal:280, fiber:6, fat:10},
+  e46:{kcal:420, fiber:6, fat:16}, e47:{kcal:280, fiber:3, fat:16}, e48:{kcal:340, fiber:3, fat:10},
+  e49:{kcal:220, fiber:6, fat:10}, e50:{kcal:340, fiber:4, fat:10}, e51:{kcal:380, fiber:5, fat:22},
+  e52:{kcal:320, fiber:9, fat:10}, e53:{kcal:460, fiber:2, fat:22}, e54:{kcal:400, fiber:3, fat:26},
+  e55:{kcal:380, fiber:3, fat:20}, e56:{kcal:320, fiber:3, fat:14}, e57:{kcal:380, fiber:3, fat:16},
+  e58:{kcal:420, fiber:1, fat:26},
+  e59:{kcal:380, fiber:2, fat:22}, e60:{kcal:420, fiber:3, fat:20}, e61:{kcal:220, fiber:1, fat:12},
+  e62:{kcal:240, fiber:1, fat:14}, e63:{kcal:320, fiber:3, fat:10}, e64:{kcal:260, fiber:3, fat:14},
+  e65:{kcal:380, fiber:2, fat:20}, e66:{kcal:320, fiber:2, fat:22}, e67:{kcal:420, fiber:1, fat:18},
+  e68:{kcal:220, fiber:2, fat:12}, e69:{kcal:300, fiber:3, fat:14}, e70:{kcal:320, fiber:2, fat:10},
 };
 const MEAL_TYPE_LABEL = {
   pasta:'Primo', risotto:'Primo', soup:'Zuppa', salad:'Insalatona', secondo:'Secondo',
 };
 
 /* ---- Lattosio e glutine: adattiamo gli ingredienti invece di evitare il piatto ---- */
-const LACTOSE_KEYWORDS = ['parmigiano','pecorino','panna','burro','mozzarella','feta','ricotta','formaggio','latte'];
+const LACTOSE_KEYWORDS = ['parmigiano','pecorino','panna','burro','mozzarella','feta','ricotta','formaggio','latte','taleggio','burrata','provola','provolone','gorgonzola','grana'];
 function isLactoseFree(recipe){
   return !recipe.ing.some(([name])=> LACTOSE_KEYWORDS.some(k=> name.toLowerCase().includes(k)));
 }
 function isGlutenFree(recipe){
   return !recipe.ing.some(([name])=> GLUTEN_KEYWORDS.some(k=> name.toLowerCase().includes(k)));
 }
-const GLUTEN_KEYWORDS = ['spaghetti','penne','fusilli','rigatoni','farfalle','orecchiette','trofie','tonnarelli','ditalini','pastina','pane raffermo','farro'];
+const GLUTEN_KEYWORDS = ['spaghetti','penne','fusilli','rigatoni','farfalle','orecchiette','trofie','tonnarelli','ditalini','pastina','pane raffermo','farro','bucatini','mezze maniche','linguine','paccheri','farina','calamarata'];
 const LACTOSE_SUB = {
   'Parmigiano':'Parmigiano senza lattosio', 'Pecorino Romano':'Pecorino senza lattosio',
   'Panna':'Panna senza lattosio', 'Burro':'Burro senza lattosio', 'Mozzarella':'Mozzarella senza lattosio',
   'Feta':'Feta senza lattosio', 'Ricotta salata':'Ricotta senza lattosio', 'Crosta di parmigiano':'Crosta di parmigiano senza lattosio',
+  'Taleggio':'Taleggio senza lattosio', 'Burrata':'Burrata senza lattosio', 'Provola':'Provola senza lattosio',
+  'Formaggio a cubetti':'Formaggio senza lattosio a cubetti', 'Provolone':'Provolone senza lattosio', 'Gorgonzola':'Gorgonzola senza lattosio',
+  'Grana Padano':'Grana Padano senza lattosio',
 };
 const GLUTEN_SUB = {
   'Spaghetti':'Spaghetti senza glutine', 'Penne':'Penne senza glutine', 'Fusilli':'Fusilli senza glutine',
   'Rigatoni':'Rigatoni senza glutine', 'Farfalle':'Farfalle senza glutine', 'Orecchiette':'Orecchiette senza glutine',
   'Trofie':'Trofie senza glutine', 'Tonnarelli':'Tonnarelli senza glutine', 'Ditalini':'Ditalini senza glutine',
   'Pastina':'Pastina senza glutine', 'Pane raffermo':'Pane senza glutine', 'Farro':'Riso o quinoa (al posto del farro, senza glutine)',
+  'Bucatini':'Bucatini senza glutine', 'Mezze maniche':'Mezze maniche senza glutine', 'Linguine':'Linguine senza glutine',
+  'Paccheri':'Paccheri senza glutine', 'Farina':'Farina senza glutine', 'Calamarata':'Calamarata senza glutine',
 };
 
 /* ---- Uova, frutta a guscio, crostacei/molluschi: qui evitiamo proprio il piatto ---- */
 const ALLERGEN_KEYWORDS = {
-  eggFree: ['uovo','uova','tuorl'],
+  eggFree: ['uovo','uova','tuorl','maionese'],
   nutFree: ['pinoli','noci','nocciole','mandorle'],
-  shellfishFree: ['vongole','cozze','gamber','scampi','frutti di mare','misto di mare'],
+  shellfishFree: ['vongole','cozze','gamber','scampi','frutti di mare','misto di mare','polpo','calamari'],
 };
 function containsAllergen(recipe, key){
   const kws = ALLERGEN_KEYWORDS[key];
@@ -927,6 +1418,7 @@ function switchTab(name){
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.panel===name));
   document.querySelectorAll('section.panel').forEach(p=>p.classList.toggle('active', p.id==='panel-'+name));
   if(name==='cronologia') renderCronologia();
+  if(name==='ricette') openRecipeBrowser();
 }
 
 /* ============================= PEOPLE UI ============================= */
@@ -1010,14 +1502,14 @@ document.getElementById('savePerson').addEventListener('click', ()=>{
   Object.keys(INTOLERANCE_LABEL).forEach(k=>{
     dietary[k] = document.getElementById('person'+k.charAt(0).toUpperCase()+k.slice(1)).checked;
   });
-  people.push({name, likes, dislikes, dietary});
+  people.push({name, likes, dislikes, dietary, favorites:[]});
   savePeople(people);
   renderPeople();
   personModalBackdrop.classList.remove('open');
 });
 
 /* ============================= MENU GENERATION ============================= */
-function scoreRecipe(recipe, allLikes, allDislikes){
+function scoreRecipe(recipe, allLikes, allDislikes, favoriteIds){
   const tags = recipe.tags.map(t=>t.toLowerCase());
   for(const d of allDislikes){
     if(tags.some(t=> t.includes(d) || d.includes(t))) return -Infinity; // hard exclude
@@ -1026,12 +1518,13 @@ function scoreRecipe(recipe, allLikes, allDislikes){
   for(const l of allLikes){
     if(tags.some(t=> t.includes(l) || l.includes(t))) score += 1;
   }
+  if(favoriteIds && favoriteIds.has(recipe.id)) score += 2.5; // spinta ai piatti preferiti
   return score;
 }
 
-function pickRecipes(pool, count, allLikes, allDislikes, history){
+function pickRecipes(pool, count, allLikes, allDislikes, history, favoriteIds){
   const scored = pool
-    .map(r=>({r, score: scoreRecipe(r, allLikes, allDislikes)}))
+    .map(r=>({r, score: scoreRecipe(r, allLikes, allDislikes, favoriteIds)}))
     .filter(x=> x.score > -Infinity);
   // deprioritize recently used
   scored.forEach(x=>{
@@ -1137,17 +1630,25 @@ function generateMenu(weeklyPrefs){
       const attendees = people.filter(p=>attendeeNames.includes(p.name));
       const mealLikes = [...new Set([...attendees.flatMap(p=>p.likes), ...extraLikes])];
       const mealDislikes = [...new Set([...attendees.flatMap(p=>p.dislikes), ...extraDislikes])];
+      const mealFavorites = new Set(attendees.flatMap(p=>p.favorites || []));
       const categoriesForThis = isWeekend ? catsWeekend : catsWeekday;
 
       let pool = pickPoolForMeal(isWeekend, season, categoriesForThis);
       pool = pool.filter(r=>passesHardAllergens(r, attendees));
       let poolNoDup = pool.filter(r=>!usedIds.has(r.id));
+      if(poolNoDup.length === 0 && categoriesForThis.length){
+        // la categoria richiesta ha pochi piatti: prima di ripetere, proviamo
+        // ad allargare togliendo il filtro di categoria (restano gusti e allergie)
+        let widerPool = pickPoolForMeal(isWeekend, season, []).filter(r=>passesHardAllergens(r, attendees));
+        poolNoDup = widerPool.filter(r=>!usedIds.has(r.id));
+        if(poolNoDup.length) pool = widerPool;
+      }
       if(poolNoDup.length === 0){
-        // esauriti i piatti unici: allarghiamo di nuovo per non bloccarci
+        // esauriti davvero tutti i piatti unici disponibili: qui ripetiamo per non bloccarci
         poolNoDup = pool.length ? pool : (isWeekend ? RECIPES.filter(r=>r.type==='weekend') : RECIPES.filter(r=>r.type==='weekday'));
         poolNoDup = poolNoDup.filter(r=>passesHardAllergens(r, attendees));
       }
-      const picks = pickRecipes(poolNoDup, 1, mealLikes, mealDislikes, history);
+      const picks = pickRecipes(poolNoDup, 1, mealLikes, mealDislikes, history, mealFavorites);
       const chosenId = picks[0].id;
       usedIds.add(chosenId);
       meals[meal] = {recipeId: chosenId, attendees: attendeeNames};
@@ -1228,12 +1729,20 @@ function renderMenu(){
   renderRatings();
 }
 
-/* ---- Swap a single meal: ask meal type first ---- */
+/* ---- Swap a single meal: ask meal type, then main ingredient ---- */
 const swapModalBackdrop = document.getElementById('swapModalBackdrop');
+const swapStepType = document.getElementById('swapStepType');
+const swapStepIngredient = document.getElementById('swapStepIngredient');
+const swapIngredientSearch = document.getElementById('swapIngredientSearch');
+const swapIngredientResults = document.getElementById('swapIngredientResults');
 let swapTarget = null;
+let swapCandidatePool = []; // piatti già filtrati per tipo pasto, allergie e non ripetuti
+
 function openSwapModal(day, meal){
   swapTarget = {day, meal};
   document.getElementById('swapModalTitle').textContent = `Cosa preferisci per ${MEAL_LABEL[meal].toLowerCase()} di ${day.toLowerCase()}?`;
+  swapStepType.style.display = '';
+  swapStepIngredient.style.display = 'none';
   swapModalBackdrop.classList.add('open');
 }
 document.getElementById('cancelSwap').addEventListener('click', ()=>{
@@ -1242,20 +1751,25 @@ document.getElementById('cancelSwap').addEventListener('click', ()=>{
 });
 document.querySelectorAll('.swap-type-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    const catKey = btn.dataset.cat;
-    swapModalBackdrop.classList.remove('open');
-    if(swapTarget) performSwap(swapTarget.day, swapTarget.meal, catKey);
-    swapTarget = null;
+    if(!swapTarget) return;
+    swapTarget.catKey = btn.dataset.cat;
+    document.getElementById('swapModalTitle').textContent = 'Un ingrediente in particolare?';
+    swapStepType.style.display = 'none';
+    swapStepIngredient.style.display = '';
+    swapIngredientSearch.value = '';
+    swapCandidatePool = buildSwapCandidatePool(swapTarget.day, swapTarget.meal, swapTarget.catKey);
+    renderSwapResults('');
+    swapIngredientSearch.focus();
   });
 });
 
-function performSwap(day, meal, catKey){
+/* Piatti candidati: stesso tipo pasto scelto, senza allergeni delle persone presenti,
+   e non già usati altrove nella settimana (se possibile). */
+function buildSwapCandidatePool(day, meal, catKey){
   const dayEntry = currentMenu.week.find(w=>w.day===day);
   const entry = dayEntry.meals[meal];
   const attendeeNames = (entry.attendees && entry.attendees.length) ? entry.attendees : people.map(p=>p.name);
   const attendees = people.filter(p=>attendeeNames.includes(p.name));
-  const mealLikes = [...new Set(attendees.flatMap(p=>p.likes))];
-  const mealDislikes = [...new Set(attendees.flatMap(p=>p.dislikes))];
 
   const allowedCats = CATEGORY_MAP[catKey] || [];
   let pool = RECIPES.filter(r=> allowedCats.includes(r.category) && r.id !== entry.recipeId);
@@ -1265,18 +1779,75 @@ function performSwap(day, meal, catKey){
     currentMenu.week.flatMap(w=> MEALS.filter(m=> !(w.day===day && m===meal)).map(m=>w.meals[m].recipeId))
   );
   const poolNoDup = pool.filter(r=>!usedElsewhere.has(r.id));
-  if(poolNoDup.length) pool = poolNoDup;
+  return poolNoDup.length ? poolNoDup : pool;
+}
 
-  if(pool.length === 0){
-    alert('Non ho trovato piatti di questo tipo che rispettino tutte le preferenze. Provo con un altro tipo?');
+/* Il filtro cerca nel nome del piatto, nelle parole chiave e negli ingredienti veri e propri */
+function recipeMatchesQuery(recipe, query){
+  const q = query.trim().toLowerCase();
+  if(!q) return true;
+  if(recipe.name.toLowerCase().includes(q)) return true;
+  if(recipe.tags.some(t=> t.toLowerCase().includes(q))) return true;
+  if(recipe.ing.some(([name])=> name.toLowerCase().includes(q))) return true;
+  return false;
+}
+
+function renderSwapResults(query){
+  const matches = swapCandidatePool.filter(r=> recipeMatchesQuery(r, query));
+  swapIngredientResults.innerHTML = '';
+  if(!query.trim()){
+    const hint = document.createElement('div');
+    hint.className = 'swap-hint';
+    hint.textContent = `Scrivi un ingrediente per filtrare, oppure scegli "Qualsiasi" — ${swapCandidatePool.length} piatti disponibili in questa categoria.`;
+    swapIngredientResults.appendChild(hint);
     return;
   }
+  if(matches.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'swap-empty';
+    empty.textContent = 'Nessun piatto trovato con questo ingrediente in questa categoria.';
+    swapIngredientResults.appendChild(empty);
+    return;
+  }
+  matches.slice(0, 12).forEach(r=>{
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'swap-result-row';
+    row.innerHTML = `<span class="rname">${escapeHtml(r.name)}</span><span class="rdesc">${escapeHtml(r.desc)}</span>`;
+    row.addEventListener('click', ()=> confirmSwapChoice(r.id));
+    swapIngredientResults.appendChild(row);
+  });
+}
+swapIngredientSearch.addEventListener('input', (e)=> renderSwapResults(e.target.value));
 
+document.getElementById('swapAnyBtn').addEventListener('click', ()=>{
+  if(!swapTarget) return;
+  const query = swapIngredientSearch.value.trim();
+  const pool = query ? swapCandidatePool.filter(r=> recipeMatchesQuery(r, query)) : swapCandidatePool;
+  if(pool.length === 0){
+    alert('Non ho trovato piatti con questo ingrediente in questa categoria.');
+    return;
+  }
+  const dayEntry = currentMenu.week.find(w=>w.day===swapTarget.day);
+  const entry = dayEntry.meals[swapTarget.meal];
+  const attendeeNames = (entry.attendees && entry.attendees.length) ? entry.attendees : people.map(p=>p.name);
+  const attendees = people.filter(p=>attendeeNames.includes(p.name));
+  const mealLikes = [...new Set(attendees.flatMap(p=>p.likes))];
+  const mealDislikes = [...new Set(attendees.flatMap(p=>p.dislikes))];
+  const mealFavorites = new Set(attendees.flatMap(p=>p.favorites || []));
   const history = loadHistory();
-  const picks = pickRecipes(pool, 1, mealLikes, mealDislikes, history);
-  entry.recipeId = picks[0].id;
+  const picks = pickRecipes(pool, 1, mealLikes, mealDislikes, history, mealFavorites);
+  confirmSwapChoice(picks[0].id);
+});
+
+function confirmSwapChoice(recipeId){
+  const dayEntry = currentMenu.week.find(w=>w.day===swapTarget.day);
+  const entry = dayEntry.meals[swapTarget.meal];
+  entry.recipeId = recipeId;
   saveMenu(currentMenu);
   renderMenu();
+  swapModalBackdrop.classList.remove('open');
+  swapTarget = null;
 }
 
 /* ============================= RATINGS ============================= */
@@ -1345,6 +1916,107 @@ function renderCronologia(){
     container.appendChild(card);
   });
 }
+
+/* ============================= RICETTARIO ============================= */
+let favoritesActivePerson = null;
+
+function openRecipeBrowser(){
+  if(people.length && (!favoritesActivePerson || !people.find(p=>p.name===favoritesActivePerson))){
+    favoritesActivePerson = people[0].name;
+  }
+  renderFavoritePersonChips();
+  renderRecipeBrowser();
+}
+
+function renderFavoritePersonChips(){
+  const box = document.getElementById('favoritePersonChips');
+  box.innerHTML = '';
+  if(people.length === 0){
+    box.innerHTML = `<span style="font-size:13px; color:var(--ink-soft);">Aggiungi prima almeno una persona nel tab Persone.</span>`;
+    return;
+  }
+  people.forEach(p=>{
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'person-chip' + (p.name===favoritesActivePerson ? ' active' : '');
+    chip.textContent = p.name;
+    chip.addEventListener('click', ()=>{
+      favoritesActivePerson = p.name;
+      renderFavoritePersonChips();
+      renderRecipeBrowser();
+    });
+    box.appendChild(chip);
+  });
+}
+
+function renderRecipeBrowser(){
+  const results = document.getElementById('recipeBrowserResults');
+  const query = document.getElementById('recipeBrowserSearch').value;
+  const checkedCats = Array.from(document.querySelectorAll('#recipeBrowserFilters input[type=checkbox]:not(#onlyFavoritesToggle):checked')).map(c=>c.value);
+  const onlyFavorites = document.getElementById('onlyFavoritesToggle').checked;
+  const activePerson = people.find(p=>p.name===favoritesActivePerson);
+  const favSet = new Set((activePerson && activePerson.favorites) || []);
+
+  let list = RECIPES.slice();
+  if(checkedCats.length){
+    const allowed = new Set(checkedCats.flatMap(c=>CATEGORY_MAP[c]||[]));
+    list = list.filter(r=> allowed.has(r.category));
+  }
+  if(query.trim()){
+    list = list.filter(r=> recipeMatchesQuery(r, query));
+  }
+  if(onlyFavorites){
+    list = list.filter(r=> favSet.has(r.id));
+  }
+
+  const countLabel = document.createElement('div');
+  countLabel.className = 'recipe-browser-count';
+  countLabel.textContent = `${list.length} ${list.length===1?'piatto':'piatti'} su ${RECIPES.length} nel ricettario.`;
+  results.innerHTML = '';
+  results.appendChild(countLabel);
+
+  if(list.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.innerHTML = `<div class="icon">🔍</div><p>Nessun piatto trovato con questi filtri.</p>`;
+    results.appendChild(empty);
+    return;
+  }
+
+  list.forEach(r=>{
+    const nutr = NUTRITION[r.id] || {};
+    const mealType = MEAL_TYPE_LABEL[r.category] || '';
+    const isFav = favSet.has(r.id);
+    const card = document.createElement('div');
+    card.className = 'recipe-card';
+    card.innerHTML = `
+      <div class="rc-body">
+        <div class="rc-title">${escapeHtml(r.name)} <span class="meal-type">${mealType}</span></div>
+        <div class="rc-desc">${escapeHtml(r.desc)}</div>
+        <div class="rc-nutr">${nutr.kcal} kcal · ${nutr.fiber} g fibre · ${nutr.fat} g grassi</div>
+      </div>
+      <button class="fav-heart ${isFav?'filled':''}" data-id="${r.id}" title="${activePerson ? 'Preferito di '+escapeHtml(activePerson.name) : 'Aggiungi prima una persona'}">${isFav?'♥':'♡'}</button>
+    `;
+    results.appendChild(card);
+  });
+
+  results.querySelectorAll('.fav-heart').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(!activePerson){ alert('Aggiungi prima almeno una persona nel tab Persone.'); return; }
+      const id = btn.dataset.id;
+      activePerson.favorites = activePerson.favorites || [];
+      const idx = activePerson.favorites.indexOf(id);
+      if(idx === -1) activePerson.favorites.push(id);
+      else activePerson.favorites.splice(idx, 1);
+      savePeople(people);
+      renderRecipeBrowser();
+    });
+  });
+}
+document.getElementById('recipeBrowserSearch').addEventListener('input', renderRecipeBrowser);
+document.querySelectorAll('#recipeBrowserFilters input[type=checkbox]').forEach(cb=>{
+  cb.addEventListener('change', renderRecipeBrowser);
+});
 
 const checkinModalBackdrop = document.getElementById('checkinModalBackdrop');
 function openCheckinModal(){
