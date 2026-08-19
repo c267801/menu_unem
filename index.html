@@ -255,6 +255,13 @@
     cursor:pointer; user-select:none;
   }
   .cat-pill input{accent-color:var(--basil); width:14px; height:14px;}
+  .meal-pref-row{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px;}
+  .meal-pref-label{font-size:12px; font-weight:700; color:var(--basil-dark); margin-bottom:6px;}
+  .meal-pref-col .taglist{gap:6px;}
+  .meal-pref-col .cat-pill{font-size:12px; padding:5px 9px;}
+  @media (max-width:420px){
+    .meal-pref-row{grid-template-columns:1fr;}
+  }
 
   /* ---------- Swap ingredient live search ---------- */
   #swapIngredientSearch{
@@ -439,6 +446,7 @@
     font-variant-numeric:tabular-nums;
   }
   .mini-note{font-size:11.5px; color:var(--ink-soft); margin-top:3px; line-height:1.4;}
+  .mini-note.warn{color:var(--tomato); font-weight:600;}
   .lactose-free-badge{
     display:inline-block;
     font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
@@ -462,25 +470,35 @@
   .keep-row input{accent-color:var(--basil); width:16px; height:16px; flex-shrink:0;}
   .keep-row .kday{font-weight:700; color:var(--basil-dark); min-width:110px;}
 
-  /* ---------- Attendance accordion ---------- */
-  .attend-list{border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--paper-white);}
-  .attend-day{border-bottom:1px solid var(--line);}
-  .attend-day:last-child{border-bottom:none;}
-  .attend-day-header{
-    width:100%; display:flex; align-items:center; gap:8px;
-    background:none; border:none; text-align:left; cursor:pointer;
-    padding:12px 14px; font-family:'Inter',sans-serif; font-size:14px; font-weight:600; color:var(--ink);
+  /* ---------- Attendance matrix ---------- */
+  .attend-matrix-block{margin-bottom:20px;}
+  .attend-matrix-block:last-child{margin-bottom:0;}
+  .attend-matrix-title{
+    font-weight:700; font-size:13px; color:var(--basil-dark);
+    margin-bottom:8px; display:flex; align-items:center; gap:6px;
   }
-  .attend-day-name{flex:1;}
-  .attend-day-summary{font-size:12px; color:var(--ink-soft); font-weight:500;}
-  .attend-day-header .chevron{transition:transform .2s ease; color:var(--ink-soft);}
-  .attend-day-header.open .chevron{transform:rotate(180deg);}
-  .attend-day-body{padding:0 14px 14px; animation:fade .2s ease;}
-  .attend-meal-row{margin-bottom:10px;}
-  .attend-meal-row:last-child{margin-bottom:0;}
-  .attend-meal-row .meal-icon{margin-right:4px;}
-  .attend-meal-row .meal-label{font-size:12px; font-weight:700; color:var(--basil-dark); margin-right:8px;}
-  .attend-meal-row .chip-row{display:inline-flex; flex-wrap:wrap; gap:6px; margin-top:6px;}
+  .attend-matrix-wrap{
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+    border:1px solid var(--line); border-radius:10px;
+  }
+  .attend-matrix{border-collapse:collapse; width:100%; font-size:12px;}
+  .attend-matrix th, .attend-matrix td{
+    padding:8px 10px; text-align:center; border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  .attend-matrix tbody tr:last-child td{border-bottom:none;}
+  .attend-matrix thead th{
+    font-weight:700; color:var(--basil-dark); background:var(--paper);
+    font-size:11.5px;
+  }
+  .attend-matrix td.attend-matrix-day{
+    font-weight:700; text-align:left; color:var(--basil-dark);
+    position:sticky; left:0; background:var(--paper-white); cursor:pointer;
+    border-right:1px solid var(--line);
+  }
+  .attend-matrix thead th:first-child{
+    position:sticky; left:0; background:var(--paper); z-index:1; border-right:1px solid var(--line);
+  }
+  .attend-matrix input[type=checkbox]{accent-color:var(--basil); width:17px; height:17px;}
 
   /* ---------- Ratings ---------- */
   .ratings-box{
@@ -719,7 +737,7 @@
     <div class="field">
       <label>Chi c'è, pranzo e cena?</label>
       <div id="attendanceList" class="attend-list"></div>
-      <p style="font-size:12px; color:var(--ink-soft); margin:8px 0 0;">Per ogni giorno, tocca per aprire e togliere chi non c'è. Di default ci sono tutti.</p>
+      <p style="font-size:12px; color:var(--ink-soft); margin:8px 0 0;">Togli la spunta a chi non c'è. Tocca il nome del giorno per accendere/spegnere tutta la riga insieme. Di default ci sono tutti.</p>
     </div>
     <div class="field" id="keepFromLastWeekField" style="display:none;">
       <label>Vuoi tenere qualcosa della settimana scorsa?</label>
@@ -735,21 +753,49 @@
     </div>
     <div class="field">
       <label>Cosa preferite nei giorni feriali?</label>
-      <div class="taglist" id="categoryChoicesWeekday" style="gap:8px; margin-top:4px;">
-        <label class="cat-pill"><input type="checkbox" value="primi"> Primi</label>
-        <label class="cat-pill"><input type="checkbox" value="secondi"> Secondi</label>
-        <label class="cat-pill"><input type="checkbox" value="insalatone"> Insalatone</label>
-        <label class="cat-pill"><input type="checkbox" value="zuppe"> Zuppe</label>
+      <div class="meal-pref-row">
+        <div class="meal-pref-col">
+          <div class="meal-pref-label">☀️ Pranzo</div>
+          <div class="taglist" id="categoryChoicesWeekdayPranzo">
+            <label class="cat-pill"><input type="checkbox" value="primi"> Primi</label>
+            <label class="cat-pill"><input type="checkbox" value="secondi"> Secondi</label>
+            <label class="cat-pill"><input type="checkbox" value="insalatone"> Insalatone</label>
+            <label class="cat-pill"><input type="checkbox" value="zuppe"> Zuppe</label>
+          </div>
+        </div>
+        <div class="meal-pref-col">
+          <div class="meal-pref-label">🌙 Cena</div>
+          <div class="taglist" id="categoryChoicesWeekdayCena">
+            <label class="cat-pill"><input type="checkbox" value="primi"> Primi</label>
+            <label class="cat-pill"><input type="checkbox" value="secondi"> Secondi</label>
+            <label class="cat-pill"><input type="checkbox" value="insalatone"> Insalatone</label>
+            <label class="cat-pill"><input type="checkbox" value="zuppe"> Zuppe</label>
+          </div>
+        </div>
       </div>
       <p style="font-size:12px; color:var(--ink-soft); margin:8px 0 0;">Nessuna selezione = pasta leggera come sempre.</p>
     </div>
     <div class="field">
       <label>Cosa preferite per il weekend?</label>
-      <div class="taglist" id="categoryChoicesWeekend" style="gap:8px; margin-top:4px;">
-        <label class="cat-pill"><input type="checkbox" value="primi"> Primi</label>
-        <label class="cat-pill"><input type="checkbox" value="secondi"> Secondi</label>
-        <label class="cat-pill"><input type="checkbox" value="insalatone"> Insalatone</label>
-        <label class="cat-pill"><input type="checkbox" value="zuppe"> Zuppe</label>
+      <div class="meal-pref-row">
+        <div class="meal-pref-col">
+          <div class="meal-pref-label">☀️ Pranzo</div>
+          <div class="taglist" id="categoryChoicesWeekendPranzo">
+            <label class="cat-pill"><input type="checkbox" value="primi"> Primi</label>
+            <label class="cat-pill"><input type="checkbox" value="secondi"> Secondi</label>
+            <label class="cat-pill"><input type="checkbox" value="insalatone"> Insalatone</label>
+            <label class="cat-pill"><input type="checkbox" value="zuppe"> Zuppe</label>
+          </div>
+        </div>
+        <div class="meal-pref-col">
+          <div class="meal-pref-label">🌙 Cena</div>
+          <div class="taglist" id="categoryChoicesWeekendCena">
+            <label class="cat-pill"><input type="checkbox" value="primi"> Primi</label>
+            <label class="cat-pill"><input type="checkbox" value="secondi"> Secondi</label>
+            <label class="cat-pill"><input type="checkbox" value="insalatone"> Insalatone</label>
+            <label class="cat-pill"><input type="checkbox" value="zuppe"> Zuppe</label>
+          </div>
+        </div>
       </div>
       <p style="font-size:12px; color:var(--ink-soft); margin:8px 0 0;">Nessuna selezione = scelta libera, come sempre.</p>
     </div>
@@ -1476,6 +1522,25 @@ const RECIPES = [
     source:'Buonissimo', sourceUrl:'https://www.buonissimo.it/lericette/7485_Saltimbocca'},
 ];
 
+/* Alcune ricette hanno solo il tag specifico (es. "maiale") senza quello generico
+   (es. "carne"): senza questo passaggio, una persona che scrive "carne" come
+   avversione non escluderebbe quei piatti. Deriviamo i tag generici automaticamente,
+   così vale per tutte le ricette attuali e per quelle aggiunte in futuro. */
+const GENERIC_TAG_RULES = [
+  { generic:'carne', specific:['pollo','maiale','manzo','vitello','salsiccia','tacchino','prosciutto','pancetta','guanciale','speck'] },
+  { generic:'pesce', specific:['tonno','salmone','merluzzo','branzino','orata','acciughe','alici'] },
+  { generic:'formaggio', specific:['parmigiano','pecorino','mozzarella','ricotta','feta','taleggio','burrata','provola','provolone','gorgonzola','grana','stracciatella','primosale','scamorza'] },
+  { generic:'verdure', specific:['zucchine','melanzane','zucca','peperoni','carciofi','asparagi','piselli','funghi','radicchio','finocchi','cavolfiore','broccoli','carote','rucola','spinaci','verdure a foglia','cavolo nero'] },
+];
+RECIPES.forEach(r=>{
+  const ingNames = r.ing.map(i=>i[0].toLowerCase());
+  GENERIC_TAG_RULES.forEach(rule=>{
+    const alreadyTagged = r.tags.includes(rule.generic);
+    const matchesIngredient = ingNames.some(name=> rule.specific.some(w=>name.includes(w)));
+    if(!alreadyTagged && matchesIngredient) r.tags.push(rule.generic);
+  });
+});
+
 const DAYS = ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
 const WEEKDAY_COUNT = 5;
 const MEALS = ['pranzo','cena'];
@@ -1607,6 +1672,20 @@ function adaptationNote(attendees){
   const parts = [];
   if(glutenPeople.length) parts.push(`senza glutine per ${glutenPeople.join(', ')}`);
   if(lactosePeople.length) parts.push(`senza lattosio per ${lactosePeople.join(', ')}`);
+  return parts.join(' · ');
+}
+
+/* Segnala quando, nonostante tutto, il piatto scelto contiene qualcosa che una
+   persona presente ha messo tra le cose da evitare (capita solo nei casi limite,
+   quando le avversioni sommate di tutti non lasciano alternative). Invece di
+   nascondere il compromesso, lo mostriamo chiaramente: es. "Anna: togliere pollo". */
+function dislikeConflictNote(recipe, attendees){
+  const tags = recipe.tags.map(t=>t.toLowerCase());
+  const parts = [];
+  attendees.forEach(p=>{
+    const conflicts = (p.dislikes||[]).filter(d=> tags.some(t=> t.includes(d) || d.includes(t)));
+    if(conflicts.length) parts.push(`${p.name}: togliere ${conflicts.join(', ')}`);
+  });
   return parts.join(' · ');
 }
 
@@ -1896,8 +1975,10 @@ function generateMenu(weeklyPrefs){
   const extraDislikes = splitFreeText(weeklyPrefs.avoidText);
   const history = loadHistory();
   const season = currentSeason();
-  const catsWeekday = weeklyPrefs.categoriesWeekday || [];
-  const catsWeekend = weeklyPrefs.categoriesWeekend || [];
+  const catsWeekdayPranzo = weeklyPrefs.categoriesWeekdayPranzo || [];
+  const catsWeekdayCena = weeklyPrefs.categoriesWeekdayCena || [];
+  const catsWeekendPranzo = weeklyPrefs.categoriesWeekendPranzo || [];
+  const catsWeekendCena = weeklyPrefs.categoriesWeekendCena || [];
   const mealAttendance = weeklyPrefs.mealAttendance || {};
   const keepMeals = weeklyPrefs.keepMeals || [];
 
@@ -1938,7 +2019,9 @@ function generateMenu(weeklyPrefs){
       const mealLikes = [...new Set([...attendees.flatMap(p=>p.likes), ...extraLikes])];
       const mealDislikes = [...new Set([...attendees.flatMap(p=>p.dislikes), ...extraDislikes])];
       const mealFavorites = new Set(attendees.flatMap(p=>p.favorites || []));
-      const categoriesForThis = isWeekend ? catsWeekend : catsWeekday;
+      const categoriesForThis = isWeekend
+        ? (meal === 'pranzo' ? catsWeekendPranzo : catsWeekendCena)
+        : (meal === 'pranzo' ? catsWeekdayPranzo : catsWeekdayCena);
 
       const respectsDislikes = r => scoreRecipe(r, [], mealDislikes) > -Infinity;
 
@@ -2024,9 +2107,11 @@ function renderMenu(){
       const attendeeNames = (attendees && attendees.length) ? attendees : people.map(p=>p.name);
       const mealAttendees = people.filter(p=>attendeeNames.includes(p.name));
       const adaptNote = adaptationNote(mealAttendees);
+      const warnNote = dislikeConflictNote(r, mealAttendees);
       const chi = (attendeeNames.length && attendeeNames.length < people.length)
         ? `<div class="mini-note">Per: ${attendeeNames.map(escapeHtml).join(', ')}</div>` : '';
       const adaptRow = adaptNote ? `<div class="mini-note">Adattato: ${escapeHtml(adaptNote)}</div>` : '';
+      const warnRow = warnNote ? `<div class="mini-note warn">⚠️ ${escapeHtml(warnNote)}</div>` : '';
       return `
         <div class="meal-card">
           <div class="meal-card-head">
@@ -2037,6 +2122,7 @@ function renderMenu(){
           <div class="desc">${escapeHtml(r.desc)}</div>
           ${chi}
           ${adaptRow}
+          ${warnRow}
           <div class="nutr">${nutr.kcal} kcal · ${nutr.fiber} g fibre · ${nutr.fat} g grassi</div>
           <button class="swap-btn" data-day="${day}" data-meal="${meal}">↻ Cambia</button>
         </div>
@@ -2357,42 +2443,44 @@ const checkinModalBackdrop = document.getElementById('checkinModalBackdrop');
 function openCheckinModal(){
   document.getElementById('checkinWant').value='';
   document.getElementById('checkinAvoid').value='';
-  document.querySelectorAll('#categoryChoicesWeekday input[type=checkbox]').forEach(c=>c.checked=false);
-  document.querySelectorAll('#categoryChoicesWeekend input[type=checkbox]').forEach(c=>c.checked=false);
+  document.querySelectorAll('#categoryChoicesWeekdayPranzo input[type=checkbox]').forEach(c=>c.checked=false);
+  document.querySelectorAll('#categoryChoicesWeekdayCena input[type=checkbox]').forEach(c=>c.checked=false);
+  document.querySelectorAll('#categoryChoicesWeekendPranzo input[type=checkbox]').forEach(c=>c.checked=false);
+  document.querySelectorAll('#categoryChoicesWeekendCena input[type=checkbox]').forEach(c=>c.checked=false);
 
   const attendanceList = document.getElementById('attendanceList');
   attendanceList.innerHTML = '';
-  DAYS.forEach(day=>{
-    const wrap = document.createElement('div');
-    wrap.className = 'attend-day';
-    wrap.dataset.day = day;
-    const mealsHtml = MEALS.map(meal=>{
-      const chips = people.map(p=>`<label class="cat-pill"><input type="checkbox" data-meal="${meal}" value="${escapeHtml(p.name)}" checked> ${escapeHtml(p.name)}</label>`).join(' ');
-      return `<div class="attend-meal-row"><span class="meal-icon">${MEAL_ICON[meal]}</span><span class="meal-label">${MEAL_LABEL[meal]}</span><span class="chip-row">${chips}</span></div>`;
-    }).join('');
-    wrap.innerHTML = `
-      <button type="button" class="attend-day-header">
-        <span class="attend-day-name">${day}</span>
-        <span class="attend-day-summary">Tutti</span>
-        <span class="chevron">⌄</span>
-      </button>
-      <div class="attend-day-body" hidden>${mealsHtml}</div>
-    `;
-    attendanceList.appendChild(wrap);
-  });
-  attendanceList.querySelectorAll('.attend-day-header').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const body = btn.nextElementSibling;
-      const willOpen = body.hasAttribute('hidden');
-      if(willOpen) body.removeAttribute('hidden'); else body.setAttribute('hidden','');
-      btn.classList.toggle('open', willOpen);
+  if(people.length === 0){
+    attendanceList.innerHTML = `<p style="font-size:13px; color:var(--ink-soft);">Aggiungi prima le persone nel tab Persone.</p>`;
+  } else {
+    MEALS.forEach(meal=>{
+      const block = document.createElement('div');
+      block.className = 'attend-matrix-block';
+      const headerCells = people.map(p=>`<th>${escapeHtml(p.name)}</th>`).join('');
+      const rows = DAYS.map(day=>{
+        const cells = people.map(p=>`<td><input type="checkbox" checked data-day="${day}" data-meal="${meal}" data-person="${escapeHtml(p.name)}"></td>`).join('');
+        return `<tr><td class="attend-matrix-day">${day.slice(0,3)}</td>${cells}</tr>`;
+      }).join('');
+      block.innerHTML = `
+        <div class="attend-matrix-title">${MEAL_ICON[meal]} ${MEAL_LABEL[meal]}</div>
+        <div class="attend-matrix-wrap">
+          <table class="attend-matrix">
+            <thead><tr><th></th>${headerCells}</tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+      attendanceList.appendChild(block);
     });
-  });
-  attendanceList.querySelectorAll('.attend-day').forEach(wrap=>{
-    wrap.querySelectorAll('input[type=checkbox]').forEach(cb=>{
-      cb.addEventListener('change', ()=> updateAttendSummary(wrap));
+    // tocca il nome del giorno per accendere/spegnere tutta la riga in un colpo
+    attendanceList.querySelectorAll('.attend-matrix-day').forEach(cell=>{
+      cell.addEventListener('click', ()=>{
+        const boxes = cell.parentElement.querySelectorAll('input[type=checkbox]');
+        const allChecked = Array.from(boxes).every(b=>b.checked);
+        boxes.forEach(b=> b.checked = !allChecked);
+      });
     });
-  });
+  }
 
   const keepField = document.getElementById('keepFromLastWeekField');
   const keepList = document.getElementById('keepFromLastWeekList');
@@ -2415,14 +2503,6 @@ function openCheckinModal(){
   }
   checkinModalBackdrop.classList.add('open');
 }
-function updateAttendSummary(wrap){
-  const summary = wrap.querySelector('.attend-day-summary');
-  const missing = MEALS.some(meal=>{
-    const checked = wrap.querySelectorAll(`input[data-meal="${meal}"]:checked`).length;
-    return checked < people.length;
-  });
-  summary.textContent = missing ? 'Modificato' : 'Tutti';
-}
 document.getElementById('generateBtn').addEventListener('click', openCheckinModal);
 document.getElementById('regenerateBtn').addEventListener('click', openCheckinModal);
 document.getElementById('skipCheckin').addEventListener('click', ()=>{
@@ -2432,19 +2512,18 @@ document.getElementById('skipCheckin').addEventListener('click', ()=>{
 document.getElementById('confirmCheckin').addEventListener('click', ()=>{
   const wantText = document.getElementById('checkinWant').value;
   const avoidText = document.getElementById('checkinAvoid').value;
-  const categoriesWeekday = Array.from(document.querySelectorAll('#categoryChoicesWeekday input[type=checkbox]:checked')).map(c=>c.value);
-  const categoriesWeekend = Array.from(document.querySelectorAll('#categoryChoicesWeekend input[type=checkbox]:checked')).map(c=>c.value);
+  const categoriesWeekdayPranzo = Array.from(document.querySelectorAll('#categoryChoicesWeekdayPranzo input[type=checkbox]:checked')).map(c=>c.value);
+  const categoriesWeekdayCena = Array.from(document.querySelectorAll('#categoryChoicesWeekdayCena input[type=checkbox]:checked')).map(c=>c.value);
+  const categoriesWeekendPranzo = Array.from(document.querySelectorAll('#categoryChoicesWeekendPranzo input[type=checkbox]:checked')).map(c=>c.value);
+  const categoriesWeekendCena = Array.from(document.querySelectorAll('#categoryChoicesWeekendCena input[type=checkbox]:checked')).map(c=>c.value);
   const keepMeals = Array.from(document.querySelectorAll('#keepFromLastWeekList input[type=checkbox]:checked')).map(c=>c.value);
   const mealAttendance = {};
-  document.querySelectorAll('#attendanceList .attend-day').forEach(wrap=>{
-    const day = wrap.dataset.day;
-    mealAttendance[day] = {};
-    MEALS.forEach(meal=>{
-      mealAttendance[day][meal] = Array.from(wrap.querySelectorAll(`input[data-meal="${meal}"]:checked`)).map(c=>c.value);
-    });
+  DAYS.forEach(day=>{ mealAttendance[day] = {pranzo:[], cena:[]}; });
+  document.querySelectorAll('#attendanceList input[type=checkbox]').forEach(cb=>{
+    if(cb.checked) mealAttendance[cb.dataset.day][cb.dataset.meal].push(cb.dataset.person);
   });
   checkinModalBackdrop.classList.remove('open');
-  generateMenu({wantText, avoidText, categoriesWeekday, categoriesWeekend, keepMeals, mealAttendance});
+  generateMenu({wantText, avoidText, categoriesWeekdayPranzo, categoriesWeekdayCena, categoriesWeekendPranzo, categoriesWeekendCena, keepMeals, mealAttendance});
 });
 document.getElementById('toListBtn').addEventListener('click', ()=>{ renderShoppingList(); switchTab('list'); });
 
