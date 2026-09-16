@@ -500,6 +500,28 @@
   }
   .attend-matrix input[type=checkbox]{accent-color:var(--basil); width:17px; height:17px;}
 
+  /* ---------- Balance summary ---------- */
+  .balance-box{
+    background:var(--paper-white); border:1px solid var(--line); border-radius:14px;
+    padding:14px 16px; margin-bottom:16px; box-shadow:var(--shadow);
+  }
+  .balance-box h4{
+    font-family:'Fraunces',serif; font-style:italic; font-size:17px;
+    margin:0 0 10px; color:var(--basil-dark);
+  }
+  .bal-row{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:8px;}
+  .bal-row:last-child{margin-bottom:0;}
+  .bal-label{
+    font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--ink-soft); min-width:84px;
+  }
+  .bal-chip{
+    font-size:12px; padding:4px 10px; border-radius:100px;
+    background:rgba(47,74,56,0.08); color:var(--basil-dark);
+  }
+  .bal-chip b{font-weight:800;}
+  .bal-note{font-size:12px; color:var(--ink-soft);}
+
   /* ---------- Ratings ---------- */
   .ratings-box{
     background:var(--paper-white);
@@ -622,6 +644,7 @@
     <h2 class="panel-title">La settimana, giorno per giorno</h2>
     <p class="panel-note" id="menuNote">Pasta semplice da lunedì a venerdì, qualcosa di speciale sabato e domenica.</p>
     <div id="menuContainer"></div>
+    <div id="balanceContainer"></div>
     <div id="ratingsContainer"></div>
     <div class="btn-row">
       <button class="btn btn-primary" id="regenerateBtn">↻ Rimescola la settimana</button>
@@ -1528,7 +1551,7 @@ const RECIPES = [
    così vale per tutte le ricette attuali e per quelle aggiunte in futuro. */
 const GENERIC_TAG_RULES = [
   { generic:'carne', specific:['pollo','maiale','manzo','vitello','salsiccia','tacchino','prosciutto','pancetta','guanciale','speck'] },
-  { generic:'pesce', specific:['tonno','salmone','merluzzo','branzino','orata','acciughe','alici'] },
+  { generic:'pesce', specific:['tonno','salmone','merluzzo','branzino','orata','acciughe','alici','cozze','vongole','gamber','scampi','calamari','polpo','misto di mare'] },
   { generic:'formaggio', specific:['parmigiano','pecorino','mozzarella','ricotta','feta','taleggio','burrata','provola','provolone','gorgonzola','grana','stracciatella','primosale','scamorza'] },
   { generic:'verdure', specific:['zucchine','melanzane','zucca','peperoni','carciofi','asparagi','piselli','funghi','radicchio','finocchi','cavolfiore','broccoli','carote','rucola','spinaci','verdure a foglia','cavolo nero'] },
 ];
@@ -1606,6 +1629,32 @@ const NUTRITION = {
   e92:{kcal:380, fiber:1, fat:18}, e93:{kcal:380, fiber:1, fat:18}, e94:{kcal:460, fiber:1, fat:24},
   e95:{kcal:380, fiber:1, fat:16},
 };
+/* ============================= META PER IL BILANCIAMENTO ============================= */
+/* Ogni ricetta appartiene a una "famiglia" (carne, pesce, legumi, verdure) e ha un
+   livello di ricchezza calorica: il pianificatore settimanale usa queste due cose
+   per variare e alternare, invece di scegliere ogni pasto a sé. */
+const FAMILY_LABEL = { carne:'Carne', pesce:'Pesce', legumi:'Legumi', vegetariano:'Verdure' };
+const FAMILY_ICON = { carne:'🥩', pesce:'🐟', legumi:'🫘', vegetariano:'🥦' };
+const SEA_WORDS = ['frutti di mare','cozze','vongole','gamberi','scampi','calamari','polpo'];
+function recipeFamily(r){
+  const t = r.tags;
+  if(t.includes('carne')) return 'carne';
+  if(t.includes('pesce') || t.some(x=>SEA_WORDS.includes(x))) return 'pesce';
+  if(['legumi','ceci','lenticchie','fagioli'].some(x=>t.includes(x))) return 'legumi';
+  return 'vegetariano';
+}
+function recipeRichness(r){
+  const n = NUTRITION[r.id] || {kcal:480, fat:16};
+  if(n.kcal >= 560 || n.fat >= 24) return 'ricco';
+  if(n.kcal <= 420) return 'leggero';
+  return 'medio';
+}
+RECIPES.forEach(r=>{
+  r.family = recipeFamily(r);
+  r.richness = recipeRichness(r);
+  r.kcal = (NUTRITION[r.id] || {}).kcal || 480;
+});
+
 const MEAL_TYPE_LABEL = {
   pasta:'Primo', risotto:'Primo', soup:'Zuppa', salad:'Insalatona', secondo:'Secondo',
 };
@@ -1961,6 +2010,174 @@ function pickPoolForMeal(isWeekend, season, categoriesForThis){
   return pool;
 }
 
+/* ============================= PIANIFICATORE SETTIMANALE ============================= */
+function personHasPreferences(p){
+  return !!((p.likes && p.likes.length) || (p.favorites && p.favorites.length));
+}
+function personLikesRecipe(p, r){
+  if((p.favorites || []).includes(r.id)) return true;
+  const tags = r.tags.map(t=>t.toLowerCase());
+  const fw = CATEGORY_FORMAT_WORD[r.category];
+  if(fw) tags.push(fw);
+  return (p.likes || []).some(l=> tags.some(t=> t.includes(l) || l.includes(t)));
+}
+
+/* Punteggio di un candidato dato il contesto della settimana costruita finora.
+   Le regole, in ordine di peso:
+   - gusti a turno: chi finora ha avuto meno piatti "suoi" pesa di più
+   - varietà: non ripetere la stessa famiglia di seguito o nello stesso giorno, né troppo a settimana
+   - alternanza: dopo un piatto ricco ne viene uno più leggero
+   - calorie: il giorno (pranzo + cena) non deve sforare
+   - non riproporre ciò che si è mangiato di recente */
+function scoreCandidate(r, ctx){
+  let s = 0;
+  ctx.attendees.forEach(p=>{
+    if(!personHasPreferences(p)) return;
+    if(personLikesRecipe(p, r)){
+      const deficit = ctx.maxSatisfied - (ctx.satisfied[p.name] || 0);
+      s += 1.5 + 2.5*deficit;
+      if((p.favorites || []).includes(r.id)) s += 1;
+      if(ctx.owner && ctx.owner.name === p.name) s += 5; // è il suo turno
+    }
+  });
+  if(ctx.extraLikes.length){
+    const tags = r.tags.map(t=>t.toLowerCase());
+    if(ctx.extraLikes.some(l=> tags.some(t=> t.includes(l) || l.includes(t)))) s += 2;
+  }
+  if(ctx.prevFamily === r.family) s -= 3;
+  if(ctx.dayFamily === r.family) s -= 2.5;
+  const share = ctx.familyCount[r.family] || 0;
+  if(share >= 4) s -= 1.2*(share - 3);
+  if(ctx.prevRichness === 'ricco' && r.richness === 'ricco') s -= 3;
+  if(ctx.prevRichness === 'leggero' && r.richness === 'leggero') s -= 1;
+  if(ctx.dayRichness === 'ricco' && r.richness === 'ricco') s -= 2;
+  const dayTotal = ctx.dayKcal + r.kcal;
+  if(dayTotal > 1150) s -= (dayTotal - 1150)/60;
+  if(ctx.history.includes(r.id)) s -= 2;
+  if(ctx.offSeasonIds && ctx.offSeasonIds.has(r.id)) s -= 1.5; // fuori stagione: si può, ma non per primo
+  return s;
+}
+
+/* A chi tocca: tra i presenti con dei gusti, chi finora ha avuto meno piatti "suoi".
+   A parità, si ruota in base al numero del pasto, così non vince sempre lo stesso. */
+function pickOwner(attendees, satisfied, mealIndex){
+  const elig = attendees.filter(personHasPreferences);
+  if(!elig.length) return null;
+  const min = Math.min(...elig.map(p=>satisfied[p.name]));
+  const tied = elig.filter(p=>satisfied[p.name] === min);
+  return tied[mealIndex % tied.length];
+}
+
+/* Piatti graditi al titolare del pasto, cercati oltre la stagione e — se serve — oltre
+   il tipo di giornata, rispettando comunque veti, allergie e la categoria richiesta. */
+function widenForOwner(owner, isWeekend, cats, attendees, extraDislikes, usedIds){
+  const mealDislikes = [...new Set([...attendees.flatMap(p=>p.dislikes), ...extraDislikes])];
+  const ok = r => passesHardAllergens(r, attendees) && scoreRecipe(r, [], mealDislikes) > -Infinity
+                 && !usedIds.has(r.id) && personLikesRecipe(owner, r);
+  let liked = RECIPES.filter(ok);
+  if(cats && cats.length){
+    const allowed = new Set(cats.flatMap(c=>CATEGORY_MAP[c] || []));
+    const inCat = liked.filter(r=>allowed.has(r.category));
+    if(inCat.length) liked = inCat;
+  }
+  const sameType = liked.filter(r=> r.type === (isWeekend ? 'weekend' : 'weekday'));
+  return sameType.length ? sameType : liked;
+}
+
+/* Candidati per un pasto: a cascata, dal pool abituale fino a tutto il ricettario,
+   senza mai violare allergie e "non mi piace" finché esiste un'alternativa. */
+function candidatesForMeal(isWeekend, meal, attendees, cats, season, extraDislikes, usedIds){
+  const mealDislikes = [...new Set([...attendees.flatMap(p=>p.dislikes), ...extraDislikes])];
+  const ok = r => passesHardAllergens(r, attendees) && scoreRecipe(r, [], mealDislikes) > -Infinity;
+  let pool = pickPoolForMeal(isWeekend, season, cats).filter(ok);
+  let cands = pool.filter(r=>!usedIds.has(r.id));
+  if(!cands.length && cats.length){
+    pool = pickPoolForMeal(isWeekend, season, []).filter(ok);
+    cands = pool.filter(r=>!usedIds.has(r.id));
+  }
+  if(!cands.length){
+    const all = RECIPES.filter(ok);
+    cands = all.filter(r=>!usedIds.has(r.id));
+    if(!cands.length) cands = all; // meglio ripetere che violare un veto
+  }
+  if(!cands.length){
+    // caso estremo: nessuna ricetta rispetta tutte le avversioni insieme
+    cands = RECIPES.filter(r=> r.type === (isWeekend ? 'weekend' : 'weekday') && passesHardAllergens(r, attendees));
+    if(!cands.length) cands = RECIPES.filter(r=>passesHardAllergens(r, attendees));
+  }
+  return cands;
+}
+
+function buildWeekPlan(params, noise){
+  const {mealAttendance, pinned, extraLikes, extraDislikes, catsFor, season, history} = params;
+  const usedIds = new Set(Object.values(pinned));
+  const satisfied = {}; people.forEach(p=> satisfied[p.name] = 0);
+  const familyCount = {carne:0, pesce:0, legumi:0, vegetariano:0};
+  const eligible = people.filter(personHasPreferences);
+  let prevFamily = null, prevRichness = null, planScore = 0;
+
+  const week = DAYS.map((day, i)=>{
+    const isWeekend = i >= WEEKDAY_COUNT;
+    const meals = {};
+    let dayKcal = 0, dayFamily = null, dayRichness = null;
+
+    MEALS.forEach(meal=>{
+      const key = day+'|'+meal;
+      const dayAtt = mealAttendance[day];
+      const explicit = !!(dayAtt && Object.prototype.hasOwnProperty.call(dayAtt, meal));
+      const attendeeNames = explicit ? dayAtt[meal] : people.map(p=>p.name);
+      const attendees = people.filter(p=>attendeeNames.includes(p.name));
+
+      const register = (r)=>{
+        attendees.forEach(p=>{ if(personHasPreferences(p) && personLikesRecipe(p, r)) satisfied[p.name]++; });
+        familyCount[r.family]++;
+        prevFamily = r.family; prevRichness = r.richness;
+        dayKcal += r.kcal; dayFamily = r.family;
+        if(r.richness === 'ricco') dayRichness = 'ricco';
+        usedIds.add(r.id);
+      };
+
+      if(pinned[key]){
+        const r = recipeById(pinned[key]);
+        meals[meal] = {recipeId: r.id, attendees: attendeeNames.length ? attendeeNames : people.map(p=>p.name)};
+        register(r);
+        return;
+      }
+      if(explicit && attendeeNames.length === 0){ meals[meal] = null; return; }
+
+      let cands = candidatesForMeal(isWeekend, meal, attendees, catsFor(isWeekend, meal), season, extraDislikes, usedIds);
+      const maxSatisfied = eligible.length ? Math.max(...eligible.map(p=>satisfied[p.name])) : 0;
+      const owner = pickOwner(attendees, satisfied, i*MEALS.length + MEALS.indexOf(meal));
+      const offSeasonIds = new Set();
+      if(owner && !cands.some(r=>personLikesRecipe(owner, r))){
+        // il turno di questa persona non deve andare perso: cerchiamo fuori stagione
+        // (e, se serve, fuori dal pool abituale), sempre rispettando veti e allergie
+        const extra = widenForOwner(owner, isWeekend, catsFor(isWeekend, meal), attendees, extraDislikes, usedIds);
+        extra.forEach(r=>offSeasonIds.add(r.id));
+        cands = cands.concat(extra);
+      }
+      const ctx = {attendees, extraLikes, satisfied, maxSatisfied, owner, offSeasonIds, familyCount, prevFamily, prevRichness, dayFamily, dayRichness, dayKcal, history};
+      let best = null, bestScore = -Infinity;
+      cands.forEach(r=>{
+        const sc = scoreCandidate(r, ctx) + Math.random()*noise;
+        if(sc > bestScore){ bestScore = sc; best = r; }
+      });
+      planScore += scoreCandidate(best, ctx);
+      meals[meal] = {recipeId: best.id, attendees: attendeeNames};
+      register(best);
+    });
+    return {day, isWeekend, meals};
+  });
+
+  // giudizio sull'intera settimana: equità tra le persone e famiglie non sbilanciate
+  if(eligible.length > 1){
+    const counts = eligible.map(p=>satisfied[p.name]);
+    planScore -= 6*(Math.max(...counts) - Math.min(...counts));
+  }
+  Object.values(familyCount).forEach(c=>{ if(c > 5) planScore -= 3*(c - 5); });
+  return {week, planScore};
+}
+
 function generateMenu(weeklyPrefs){
   weeklyPrefs = weeklyPrefs || {};
   if(people.length === 0){
@@ -1979,6 +2196,9 @@ function generateMenu(weeklyPrefs){
   const catsWeekdayCena = weeklyPrefs.categoriesWeekdayCena || [];
   const catsWeekendPranzo = weeklyPrefs.categoriesWeekendPranzo || [];
   const catsWeekendCena = weeklyPrefs.categoriesWeekendCena || [];
+  const catsFor = (isWeekend, meal)=> isWeekend
+    ? (meal === 'pranzo' ? catsWeekendPranzo : catsWeekendCena)
+    : (meal === 'pranzo' ? catsWeekdayPranzo : catsWeekdayCena);
   const mealAttendance = weeklyPrefs.mealAttendance || {};
   const keepMeals = weeklyPrefs.keepMeals || [];
 
@@ -1993,70 +2213,14 @@ function generateMenu(weeklyPrefs){
     });
   }
 
-  const usedIds = new Set(Object.values(pinned));
-
-  const week = DAYS.map((day, i)=>{
-    const isWeekend = i >= WEEKDAY_COUNT;
-    const meals = {};
-    MEALS.forEach(meal=>{
-      const key = day+'|'+meal;
-      const dayAtt = mealAttendance[day];
-      const explicit = !!(dayAtt && Object.prototype.hasOwnProperty.call(dayAtt, meal));
-      const attendeeNames = explicit ? dayAtt[meal] : people.map(p=>p.name);
-
-      if(pinned[key]){
-        meals[meal] = {recipeId: pinned[key], attendees: attendeeNames.length ? attendeeNames : people.map(p=>p.name)};
-        return;
-      }
-
-      // se la persona ha tolto tutti dal pasto di proposito, saltiamo del tutto quel pasto
-      if(explicit && attendeeNames.length === 0){
-        meals[meal] = null;
-        return;
-      }
-
-      const attendees = people.filter(p=>attendeeNames.includes(p.name));
-      const mealLikes = [...new Set([...attendees.flatMap(p=>p.likes), ...extraLikes])];
-      const mealDislikes = [...new Set([...attendees.flatMap(p=>p.dislikes), ...extraDislikes])];
-      const mealFavorites = new Set(attendees.flatMap(p=>p.favorites || []));
-      const categoriesForThis = isWeekend
-        ? (meal === 'pranzo' ? catsWeekendPranzo : catsWeekendCena)
-        : (meal === 'pranzo' ? catsWeekdayPranzo : catsWeekdayCena);
-
-      const respectsDislikes = r => scoreRecipe(r, [], mealDislikes) > -Infinity;
-
-      let pool = pickPoolForMeal(isWeekend, season, categoriesForThis);
-      pool = pool.filter(r=>passesHardAllergens(r, attendees));
-      let poolNoDup = pool.filter(r=>respectsDislikes(r) && !usedIds.has(r.id));
-
-      if(poolNoDup.length === 0 && categoriesForThis.length){
-        // la categoria richiesta ha pochi piatti: prima di ripetere, proviamo
-        // ad allargare togliendo il filtro di categoria (restano gusti, avversioni e allergie)
-        let widerPool = pickPoolForMeal(isWeekend, season, []).filter(r=>passesHardAllergens(r, attendees));
-        poolNoDup = widerPool.filter(r=>respectsDislikes(r) && !usedIds.has(r.id));
-        if(poolNoDup.length) pool = widerPool;
-      }
-      if(poolNoDup.length === 0){
-        // le avversioni escludono tutto il pool abituale (es. "pasta" tra le cose da evitare
-        // nei giorni feriali): allarghiamo a tutte le ricette, rispettando comunque le avversioni
-        const allRespecting = RECIPES.filter(r=>passesHardAllergens(r, attendees) && respectsDislikes(r));
-        poolNoDup = allRespecting.filter(r=>!usedIds.has(r.id));
-        if(poolNoDup.length) pool = allRespecting;
-        else if(allRespecting.length) pool = poolNoDup = allRespecting; // permetti ripetizioni pur di rispettare le avversioni
-      }
-      if(poolNoDup.length === 0){
-        // caso estremo: nessuna ricetta rispetta tutte le avversioni contemporaneamente,
-        // qui ripieghiamo pur di non bloccarci
-        poolNoDup = pool.length ? pool : (isWeekend ? RECIPES.filter(r=>r.type==='weekend') : RECIPES.filter(r=>r.type==='weekday'));
-        poolNoDup = poolNoDup.filter(r=>passesHardAllergens(r, attendees));
-      }
-      const picks = pickRecipes(poolNoDup, 1, mealLikes, mealDislikes, history, mealFavorites);
-      const chosenId = picks[0].id;
-      usedIds.add(chosenId);
-      meals[meal] = {recipeId: chosenId, attendees: attendeeNames};
-    });
-    return {day, isWeekend, meals};
-  });
+  // Proviamo più piani con un po' di casualità e teniamo quello più equo e bilanciato
+  const params = {mealAttendance, pinned, extraLikes, extraDislikes, catsFor, season, history};
+  let bestPlan = null;
+  for(let k = 0; k < 16; k++){
+    const plan = buildWeekPlan(params, k === 0 ? 0 : 1.2);
+    if(!bestPlan || plan.planScore > bestPlan.planScore) bestPlan = plan;
+  }
+  const week = bestPlan.week;
 
   const allChosenIds = week.flatMap(w=>MEALS.map(m=>w.meals[m] ? w.meals[m].recipeId : null)).filter(Boolean);
   currentMenu = {id:'menu_'+Date.now(), week, generatedAt: new Date().toISOString(), season, ratings:{}};
@@ -2144,7 +2308,46 @@ function renderMenu(){
   notebook.querySelectorAll('.swap-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> openSwapModal(btn.dataset.day, btn.dataset.meal));
   });
+  renderBalance();
   renderRatings();
+}
+
+/* ============================= BILANCIO DELLA SETTIMANA ============================= */
+function renderBalance(){
+  const box = document.getElementById('balanceContainer');
+  if(!currentMenu){ box.innerHTML = ''; return; }
+  const familyCount = {carne:0, pesce:0, legumi:0, vegetariano:0};
+  const richness = {leggero:0, medio:0, ricco:0};
+  const satisfied = {}; people.forEach(p=> satisfied[p.name] = 0);
+  let mealsCount = 0, kcalTotal = 0, daysWithMeals = 0;
+  currentMenu.week.forEach(w=>{
+    let dayHas = false;
+    MEALS.forEach(m=>{
+      const e = w.meals[m];
+      if(!e) return;
+      const r = recipeById(e.recipeId);
+      familyCount[r.family]++; richness[r.richness]++;
+      mealsCount++; kcalTotal += r.kcal; dayHas = true;
+      const att = people.filter(p=>(e.attendees||[]).includes(p.name));
+      att.forEach(p=>{ if(personHasPreferences(p) && personLikesRecipe(p, r)) satisfied[p.name]++; });
+    });
+    if(dayHas) daysWithMeals++;
+  });
+  const kcalDay = daysWithMeals ? Math.round(kcalTotal / daysWithMeals) : 0;
+  const famChips = Object.keys(familyCount).map(f=>`<span class="bal-chip">${FAMILY_ICON[f]} ${FAMILY_LABEL[f]} <b>${familyCount[f]}</b></span>`).join('');
+  const richChips = `<span class="bal-chip">🌿 Leggeri <b>${richness.leggero}</b></span><span class="bal-chip">⚖️ Medi <b>${richness.medio}</b></span><span class="bal-chip">🍖 Ricchi <b>${richness.ricco}</b></span>`;
+  const eligible = people.filter(personHasPreferences);
+  const fairness = eligible.length
+    ? eligible.map(p=>`<span class="bal-chip">${escapeHtml(p.name)} <b>${satisfied[p.name]}</b></span>`).join('')
+    : `<span class="bal-note">Aggiungi gusti o preferiti alle persone per vedere l'equità.</span>`;
+  box.innerHTML = `
+    <div class="balance-box">
+      <h4>Bilancio della settimana</h4>
+      <div class="bal-row"><span class="bal-label">Famiglie</span>${famChips}</div>
+      <div class="bal-row"><span class="bal-label">Ricchezza</span>${richChips}<span class="bal-chip">🔥 ~<b>${kcalDay}</b> kcal/giorno</span></div>
+      <div class="bal-row"><span class="bal-label">Piatti "suoi"</span>${fairness}</div>
+    </div>
+  `;
 }
 
 /* ---- Swap a single meal: ask meal type, then main ingredient ---- */
@@ -2232,6 +2435,32 @@ function renderSwapResults(query){
 }
 swapIngredientSearch.addEventListener('input', (e)=> renderSwapResults(e.target.value));
 
+/* Contesto di un singolo pasto dato il resto della settimana già decisa:
+   serve al "Cambia → Qualsiasi" per scegliere in modo coerente col piano. */
+function contextForMeal(day, meal){
+  const satisfied = {}; people.forEach(p=> satisfied[p.name] = 0);
+  const familyCount = {carne:0, pesce:0, legumi:0, vegetariano:0};
+  let prevFamily = null, prevRichness = null, dayFamily = null, dayRichness = null, dayKcal = 0;
+  let last = null;
+  currentMenu.week.forEach(w=>{
+    MEALS.forEach(m=>{
+      const e = w.meals[m];
+      const isTarget = (w.day === day && m === meal);
+      if(isTarget){ if(last){ prevFamily = last.family; prevRichness = last.richness; } return; }
+      if(!e) return;
+      const r = recipeById(e.recipeId);
+      const att = people.filter(p=>(e.attendees||[]).includes(p.name));
+      att.forEach(p=>{ if(personHasPreferences(p) && personLikesRecipe(p, r)) satisfied[p.name]++; });
+      familyCount[r.family]++;
+      if(w.day === day){ dayFamily = r.family; dayKcal += r.kcal; if(r.richness === 'ricco') dayRichness = 'ricco'; }
+      last = r;
+    });
+  });
+  const eligible = people.filter(personHasPreferences);
+  const maxSatisfied = eligible.length ? Math.max(...eligible.map(p=>satisfied[p.name])) : 0;
+  return {satisfied, maxSatisfied, familyCount, prevFamily, prevRichness, dayFamily, dayRichness, dayKcal};
+}
+
 document.getElementById('swapAnyBtn').addEventListener('click', ()=>{
   if(!swapTarget) return;
   const query = swapIngredientSearch.value.trim();
@@ -2244,12 +2473,17 @@ document.getElementById('swapAnyBtn').addEventListener('click', ()=>{
   const entry = dayEntry.meals[swapTarget.meal];
   const attendeeNames = (entry && entry.attendees && entry.attendees.length) ? entry.attendees : people.map(p=>p.name);
   const attendees = people.filter(p=>attendeeNames.includes(p.name));
-  const mealLikes = [...new Set(attendees.flatMap(p=>p.likes))];
   const mealDislikes = [...new Set(attendees.flatMap(p=>p.dislikes))];
-  const mealFavorites = new Set(attendees.flatMap(p=>p.favorites || []));
-  const history = loadHistory();
-  const picks = pickRecipes(pool, 1, mealLikes, mealDislikes, history, mealFavorites);
-  confirmSwapChoice(picks[0].id);
+  const respecting = pool.filter(r=> scoreRecipe(r, [], mealDislikes) > -Infinity);
+  const cands = respecting.length ? respecting : pool;
+  const ctx = Object.assign({attendees, extraLikes:[], history: loadHistory()}, contextForMeal(swapTarget.day, swapTarget.meal));
+  ctx.owner = pickOwner(attendees, ctx.satisfied, 0);
+  let best = null, bestScore = -Infinity;
+  cands.forEach(r=>{
+    const sc = scoreCandidate(r, ctx) + Math.random()*0.8;
+    if(sc > bestScore){ bestScore = sc; best = r; }
+  });
+  confirmSwapChoice(best.id);
 });
 
 function confirmSwapChoice(recipeId){
