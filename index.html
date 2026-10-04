@@ -462,6 +462,17 @@
   }
   .swap-btn:hover{background:var(--basil); color:#fff; border-color:var(--basil);}
   .swap-btn:active{transform:scale(.93);}
+  .meal-actions{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px;}
+  .meal-actions .swap-btn{margin-top:0;}
+  .vote-group{display:flex; gap:4px;}
+  .vote-btn{
+    background:none; border:1px solid var(--line); border-radius:100px; cursor:pointer;
+    font-size:13px; line-height:1; padding:4px 8px; filter:grayscale(1); opacity:.55;
+    transition:.15s ease;
+  }
+  .vote-btn:hover{opacity:1;}
+  .vote-btn.on{filter:none; opacity:1; border-color:var(--basil); background:rgba(47,74,56,0.08);}
+  .vote-btn:active{transform:scale(.9);}
   .keep-row{
     display:flex; align-items:center; gap:8px;
     padding:7px 0; font-size:13.5px; border-bottom:1px solid var(--line);
@@ -590,6 +601,23 @@
   .item-row label{flex:1;}
   .item-row.checked label{text-decoration:line-through; color:var(--ink-soft);}
   .item-qty{color:var(--ink-soft); font-size:13px;}
+  .pantry-btn{
+    flex-shrink:0; background:none; border:1px solid var(--line); border-radius:100px;
+    color:var(--ink-soft); font-size:11px; font-weight:600; padding:3px 9px; cursor:pointer;
+    transition:.15s ease;
+  }
+  .pantry-btn:hover{border-color:var(--basil); color:var(--basil);}
+  .pantry-box{
+    background:var(--paper-white); border:1.5px dashed var(--line); border-radius:14px;
+    padding:14px 16px; margin-bottom:20px;
+  }
+  .pantry-box h4{font-family:'Fraunces',serif; font-style:italic; font-size:16px; color:var(--basil-dark); margin:0 0 4px;}
+  .pantry-note{font-size:12px; color:var(--ink-soft); margin:0 0 10px;}
+  .pantry-chip{
+    font-size:12.5px; padding:4px 10px; border-radius:100px; cursor:pointer;
+    background:rgba(47,74,56,0.08); color:var(--basil-dark); border:1px solid transparent;
+  }
+  .pantry-chip:hover{border-color:var(--basil);}
 
   .empty-state{
     text-align:center; padding:48px 24px;
@@ -710,7 +738,7 @@
 
     <div class="danger-zone">
       <h3>Zona pericolosa</h3>
-      <p>Cancella tutto quello che è salvato su questo dispositivo: persone, gusti, intolleranze, preferiti, menu e cronologia. Non si può annullare — fai prima un backup se vuoi tenerne una copia.</p>
+      <p>Cancella tutto quello che è salvato su questo dispositivo: persone, gusti, intolleranze, preferiti, menu, cronologia e ingredienti segnati come già in casa. Non si può annullare — fai prima un backup se vuoi tenerne una copia.</p>
       <button class="btn btn-tomato" id="eraseAllBtn">🗑️ Cancella tutto</button>
     </div>
   </section>
@@ -858,7 +886,7 @@ const RECIPES = [
   // ---- WEEKDAY: light, fast pasta ----
   {id:'w1', name:'Aglio, Olio e Peperoncino', type:'weekday', category:'pasta',
     desc:'Spaghetti saltati nell\'olio profumato all\'aglio, con un tocco di peperoncino.',
-    tags:['aglio','olio d',',',','],
+    tags:['aglio','olio','peperoncino','piccante','semplice','vegetariano'],
     ing:[['Spaghetti','320','g','Pantry'],['Aglio','4','spicchi','Produce'],['Olio d\'oliva','60','ml','Pantry'],['Peperoncino in fiocchi','1','cucchiaini','Pantry'],['Prezzemolo','1','mazzo','Produce']]},
   {id:'w2', name:'Pasta al Pomodoro', type:'weekday', category:'pasta',
     desc:'Sugo di pomodoro semplice con basilico, il classico di ogni giorno.',
@@ -1744,6 +1772,7 @@ const LS_MENU = 'lalista_menu';
 const LS_HISTORY = 'lalista_history';
 const LS_CHECKED = 'lalista_checked';
 const LS_MENU_HISTORY = 'lalista_menu_history';
+const LS_PANTRY = 'lalista_pantry';
 
 function loadPeople(){ try{ return JSON.parse(localStorage.getItem(LS_PEOPLE)) || []; }catch(e){ return []; } }
 function savePeople(p){ localStorage.setItem(LS_PEOPLE, JSON.stringify(p)); }
@@ -1755,6 +1784,10 @@ function loadChecked(){ try{ return JSON.parse(localStorage.getItem(LS_CHECKED))
 function saveChecked(c){ localStorage.setItem(LS_CHECKED, JSON.stringify(c)); }
 function loadMenuHistory(){ try{ return JSON.parse(localStorage.getItem(LS_MENU_HISTORY)) || []; }catch(e){ return []; } }
 function saveMenuHistory(h){ localStorage.setItem(LS_MENU_HISTORY, JSON.stringify(h.slice(-52))); }
+/* Ingredienti che si hanno già in casa (olio, sale, pepe…): restano fuori dalla lista
+   finché non si rimettono, anche nelle settimane successive. */
+function loadPantry(){ try{ const p = JSON.parse(localStorage.getItem(LS_PANTRY)); return Array.isArray(p) ? p : []; }catch(e){ return []; } }
+function savePantry(p){ localStorage.setItem(LS_PANTRY, JSON.stringify(p)); }
 
 let people = loadPeople();
 let currentMenu = loadMenu();
@@ -1919,9 +1952,12 @@ document.getElementById('savePerson').addEventListener('click', ()=>{
   Object.keys(INTOLERANCE_LABEL).forEach(k=>{
     dietary[k] = document.getElementById('person'+k.charAt(0).toUpperCase()+k.slice(1)).checked;
   });
+  const duplicate = people.some((p, i)=> i !== editingPersonIndex && p.name.toLowerCase() === name.toLowerCase());
+  if(duplicate){ alert(`C'è già una persona che si chiama ${name}. Usa un nome diverso.`); return; }
   if(editingPersonIndex !== null){
     const existing = people[editingPersonIndex];
     people[editingPersonIndex] = {...existing, name, likes, dislikes, dietary};
+    if(existing.name !== name) renamePersonEverywhere(existing.name, name);
   } else {
     people.push({name, likes, dislikes, dietary, favorites:[]});
   }
@@ -1930,6 +1966,35 @@ document.getElementById('savePerson').addEventListener('click', ()=>{
   personModalBackdrop.classList.remove('open');
   editingPersonIndex = null;
 });
+
+/* Presenze e valutazioni sono salvate per nome: se una persona viene rinominata,
+   aggiorniamo anche il menu attuale e la cronologia, così non perde i suoi dati. */
+function renamePersonEverywhere(oldName, newName){
+  const fixMenu = m=>{
+    if(!m) return;
+    (m.week || []).forEach(w=>{
+      if(!w.meals) return;
+      MEALS.forEach(meal=>{
+        const e = w.meals[meal];
+        if(e && Array.isArray(e.attendees)) e.attendees = e.attendees.map(n=> n === oldName ? newName : n);
+      });
+    });
+    if(m.ratings && Object.prototype.hasOwnProperty.call(m.ratings, oldName)){
+      m.ratings[newName] = m.ratings[oldName];
+      delete m.ratings[oldName];
+    }
+  };
+  fixMenu(currentMenu);
+  menuHistory.forEach(m=>{ if(!currentMenu || m.id !== currentMenu.id) fixMenu(m); });
+  if(currentMenu){
+    const idx = menuHistory.findIndex(m=>m.id===currentMenu.id);
+    if(idx !== -1) menuHistory[idx] = currentMenu;
+    saveMenu(currentMenu);
+  }
+  saveMenuHistory(menuHistory);
+  if(favoritesActivePerson === oldName) favoritesActivePerson = newName;
+  renderMenu();
+}
 
 /* ============================= MENU GENERATION ============================= */
 const CATEGORY_FORMAT_WORD = {
@@ -2055,7 +2120,28 @@ function scoreCandidate(r, ctx){
   if(dayTotal > 1150) s -= (dayTotal - 1150)/60;
   if(ctx.history.includes(r.id)) s -= 2;
   if(ctx.offSeasonIds && ctx.offSeasonIds.has(r.id)) s -= 1.5; // fuori stagione: si può, ma non per primo
+  if(ctx.dishScores){
+    const v = ctx.dishScores[r.id] || 0;
+    s += 2*Math.max(-2, Math.min(2, v)); // 👍/👎 dati nelle settimane passate
+  }
   return s;
+}
+
+/* Somma dei 👍 (+1) e 👎 (-1) dati a ogni piatto, su tutte le settimane salvate. */
+function computeDishScores(){
+  const scores = {};
+  const menus = menuHistory.slice();
+  if(currentMenu && !menus.some(m=>m.id===currentMenu.id)) menus.push(currentMenu);
+  menus.forEach(m=>{
+    (m.week || []).forEach(w=>{
+      if(!w.meals) return;
+      MEALS.forEach(meal=>{
+        const e = w.meals[meal];
+        if(e && (e.vote === 1 || e.vote === -1)) scores[e.recipeId] = (scores[e.recipeId] || 0) + e.vote;
+      });
+    });
+  });
+  return scores;
 }
 
 /* A chi tocca: tra i presenti con dei gusti, chi finora ha avuto meno piatti "suoi".
@@ -2109,7 +2195,7 @@ function candidatesForMeal(isWeekend, meal, attendees, cats, season, extraDislik
 }
 
 function buildWeekPlan(params, noise){
-  const {mealAttendance, pinned, extraLikes, extraDislikes, catsFor, season, history} = params;
+  const {mealAttendance, pinned, extraLikes, extraDislikes, catsFor, season, history, dishScores} = params;
   const usedIds = new Set(Object.values(pinned));
   const satisfied = {}; people.forEach(p=> satisfied[p.name] = 0);
   const familyCount = {carne:0, pesce:0, legumi:0, vegetariano:0};
@@ -2156,7 +2242,7 @@ function buildWeekPlan(params, noise){
         extra.forEach(r=>offSeasonIds.add(r.id));
         cands = cands.concat(extra);
       }
-      const ctx = {attendees, extraLikes, satisfied, maxSatisfied, owner, offSeasonIds, familyCount, prevFamily, prevRichness, dayFamily, dayRichness, dayKcal, history};
+      const ctx = {attendees, extraLikes, satisfied, maxSatisfied, owner, offSeasonIds, familyCount, prevFamily, prevRichness, dayFamily, dayRichness, dayKcal, history, dishScores};
       let best = null, bestScore = -Infinity;
       cands.forEach(r=>{
         const sc = scoreCandidate(r, ctx) + Math.random()*noise;
@@ -2214,7 +2300,7 @@ function generateMenu(weeklyPrefs){
   }
 
   // Proviamo più piani con un po' di casualità e teniamo quello più equo e bilanciato
-  const params = {mealAttendance, pinned, extraLikes, extraDislikes, catsFor, season, history};
+  const params = {mealAttendance, pinned, extraLikes, extraDislikes, catsFor, season, history, dishScores: computeDishScores()};
   let bestPlan = null;
   for(let k = 0; k < 16; k++){
     const plan = buildWeekPlan(params, k === 0 ? 0 : 1.2);
@@ -2288,7 +2374,13 @@ function renderMenu(){
           ${adaptRow}
           ${warnRow}
           <div class="nutr">${nutr.kcal} kcal · ${nutr.fiber} g fibre · ${nutr.fat} g grassi</div>
-          <button class="swap-btn" data-day="${day}" data-meal="${meal}">↻ Cambia</button>
+          <div class="meal-actions">
+            <button class="swap-btn" data-day="${day}" data-meal="${meal}">↻ Cambia</button>
+            <span class="vote-group" title="Com'era? I piatti piaciuti torneranno più spesso, quelli bocciati meno">
+              <button class="vote-btn ${mealData.vote===1?'on':''}" data-day="${day}" data-meal="${meal}" data-vote="1" aria-label="Piaciuto">👍</button>
+              <button class="vote-btn ${mealData.vote===-1?'on':''}" data-day="${day}" data-meal="${meal}" data-vote="-1" aria-label="Non piaciuto">👎</button>
+            </span>
+          </div>
         </div>
       `;
     }).join('');
@@ -2307,6 +2399,16 @@ function renderMenu(){
 
   notebook.querySelectorAll('.swap-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> openSwapModal(btn.dataset.day, btn.dataset.meal));
+  });
+  notebook.querySelectorAll('.vote-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const entry = currentMenu.week.find(w=>w.day===btn.dataset.day).meals[btn.dataset.meal];
+      const v = parseInt(btn.dataset.vote, 10);
+      if(entry.vote === v) delete entry.vote; else entry.vote = v; // ritoccare lo stesso voto lo toglie
+      saveMenu(currentMenu);
+      archiveCurrentMenuIfNeeded();
+      renderMenu();
+    });
   });
   renderBalance();
   renderRatings();
@@ -2476,7 +2578,7 @@ document.getElementById('swapAnyBtn').addEventListener('click', ()=>{
   const mealDislikes = [...new Set(attendees.flatMap(p=>p.dislikes))];
   const respecting = pool.filter(r=> scoreRecipe(r, [], mealDislikes) > -Infinity);
   const cands = respecting.length ? respecting : pool;
-  const ctx = Object.assign({attendees, extraLikes:[], history: loadHistory()}, contextForMeal(swapTarget.day, swapTarget.meal));
+  const ctx = Object.assign({attendees, extraLikes:[], history: loadHistory(), dishScores: computeDishScores()}, contextForMeal(swapTarget.day, swapTarget.meal));
   ctx.owner = pickOwner(attendees, ctx.satisfied, 0);
   let best = null, bestScore = -Infinity;
   cands.forEach(r=>{
@@ -2491,6 +2593,7 @@ function confirmSwapChoice(recipeId){
   const entry = dayEntry.meals[swapTarget.meal];
   if(entry){
     entry.recipeId = recipeId;
+    delete entry.vote; // il voto era per il piatto di prima
   } else {
     // il pasto era stato saltato: lo creiamo ora, presenti tutti di default
     dayEntry.meals[swapTarget.meal] = {recipeId, attendees: people.map(p=>p.name)};
@@ -2550,7 +2653,8 @@ function renderCronologia(){
     const dateStr = new Date(m.generatedAt).toLocaleDateString('it-IT', {day:'numeric', month:'long', year:'numeric'});
     const dishes = m.week.map(w=>{
       if(w.meals){
-        return `${w.day}: ${MEALS.map(meal=> w.meals[meal] ? `${MEAL_LABEL[meal]} — ${recipeById(w.meals[meal].recipeId)?.name || '—'}` : `${MEAL_LABEL[meal]} — nessuno`).join(', ')}`;
+        const voteIcon = e=> e.vote === 1 ? ' 👍' : e.vote === -1 ? ' 👎' : '';
+        return `${w.day}: ${MEALS.map(meal=> w.meals[meal] ? `${MEAL_LABEL[meal]} — ${escapeHtml(recipeById(w.meals[meal].recipeId)?.name || '—')}${voteIcon(w.meals[meal])}` : `${MEAL_LABEL[meal]} — nessuno`).join(', ')}`;
       }
       return `${w.day}: ${recipeById(w.recipeId)?.name || '—'}`; // formati vecchi, senza pranzo/cena
     }).join(' · ');
@@ -2634,10 +2738,13 @@ function renderRecipeBrowser(){
     return;
   }
 
+  const dishScores = computeDishScores();
   list.forEach(r=>{
     const nutr = NUTRITION[r.id] || {};
     const mealType = MEAL_TYPE_LABEL[r.category] || '';
     const isFav = favSet.has(r.id);
+    const vs = dishScores[r.id] || 0;
+    const voteLine = vs ? `<div class="rc-nutr">${vs > 0 ? '👍 +'+vs : '👎 '+vs} dai vostri voti</div>` : '';
     const sourceLine = r.source
       ? `<div class="rc-source">Ispirato da: ${r.sourceUrl ? `<a href="${r.sourceUrl}" target="_blank" rel="noopener">${escapeHtml(r.source)}</a>` : escapeHtml(r.source)}</div>`
       : '';
@@ -2648,6 +2755,7 @@ function renderRecipeBrowser(){
         <div class="rc-title">${escapeHtml(r.name)} <span class="meal-type">${mealType}</span></div>
         <div class="rc-desc">${escapeHtml(r.desc)}</div>
         <div class="rc-nutr">${nutr.kcal} kcal · ${nutr.fiber} g fibre · ${nutr.fat} g grassi</div>
+        ${voteLine}
         ${sourceLine}
       </div>
       <button class="fav-heart ${isFav?'filled':''}" data-id="${r.id}" title="${activePerson ? 'Preferito di '+escapeHtml(activePerson.name) : 'Aggiungi prima una persona'}">${isFav?'♥':'♡'}</button>
@@ -2886,12 +2994,13 @@ function buildShoppingList(){
       const mealAttendees = people.filter(p=>attendeeNames.includes(p.name));
       const adaptations = neededAdaptations(mealAttendees);
       r.ing.forEach(ingRaw=>{
-        const [name, qty, unit, aisle] = adaptIngredient(ingRaw, adaptations);
+        const [name, rawQty, rawUnit, aisle] = adaptIngredient(ingRaw, adaptations);
+        const n = parseFloat(rawQty);
+        const {qty, unit} = normalizeUnit(isNaN(n)?0:n, rawUnit);
         if(!aisles[aisle]) aisles[aisle] = {};
         const key = name+'|'+unit;
         if(!aisles[aisle][key]) aisles[aisle][key] = {name, unit, qty:0};
-        const n = parseFloat(qty);
-        aisles[aisle][key].qty += isNaN(n)?0:n;
+        aisles[aisle][key].qty += qty;
       });
     });
   });
@@ -2916,27 +3025,43 @@ function renderShoppingList(){
   }
   const aisles = buildShoppingList();
   const checked = loadChecked();
+  const pantry = new Set(loadPantry());
   const pad = document.createElement('div');
   pad.className = 'notepad';
   const inner = document.createElement('div');
   inner.className = 'torn';
   pad.appendChild(inner);
 
+  const togglePantry = (name)=>{
+    const list = loadPantry();
+    const idx = list.indexOf(name);
+    if(idx === -1) list.push(name); else list.splice(idx, 1);
+    savePantry(list);
+    renderShoppingList();
+  };
+
+  const inPantry = [];
   AISLE_ORDER.forEach(aisleName=>{
     const items = aisles[aisleName];
     if(!items) return;
+    const toBuy = Object.values(items).filter(item=>{
+      if(pantry.has(item.name)){ inPantry.push(item); return false; }
+      return true;
+    });
+    if(!toBuy.length) return;
     const block = document.createElement('div');
     block.className = 'aisle';
     block.innerHTML = `<h4>${AISLE_LABEL_IT[aisleName]||aisleName}</h4>`;
-    Object.values(items).forEach(item=>{
+    toBuy.forEach(item=>{
       const id = (aisleName+'_'+item.name).replace(/\s+/g,'_');
       const qtyStr = fmtQty(item.qty, item.unit);
       const isChecked = !!checked[id];
       const row = document.createElement('div');
       row.className = 'item-row'+(isChecked?' checked':'');
       row.innerHTML = `
-        <input type="checkbox" id="${id}" ${isChecked?'checked':''}>
-        <label for="${id}">${escapeHtml(item.name)} <span class="item-qty">${qtyStr}</span></label>
+        <input type="checkbox" id="${escapeHtml(id)}" ${isChecked?'checked':''}>
+        <label for="${escapeHtml(id)}">${escapeHtml(item.name)} <span class="item-qty">${qtyStr}</span></label>
+        <button type="button" class="pantry-btn" title="Ce l'ho già in casa: toglila dalla lista anche le prossime settimane">ce l'ho</button>
       `;
       block.appendChild(row);
       row.querySelector('input').addEventListener('change', (e)=>{
@@ -2944,27 +3069,61 @@ function renderShoppingList(){
         saveChecked(checked);
         row.classList.toggle('checked', e.target.checked);
       });
+      row.querySelector('.pantry-btn').addEventListener('click', ()=> togglePantry(item.name));
     });
     pad.appendChild(block);
   });
 
   container.innerHTML = '';
   container.appendChild(pad);
+
+  if(inPantry.length){
+    const box = document.createElement('div');
+    box.className = 'pantry-box';
+    box.innerHTML = `<h4>Già in casa</h4><p class="pantry-note">Non compaiono nella lista né nei messaggi condivisi. Tocca per rimetterli.</p>`;
+    const chips = document.createElement('div');
+    chips.className = 'taglist';
+    inPantry.forEach(item=>{
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'pantry-chip';
+      chip.textContent = `↺ ${item.name}`;
+      chip.addEventListener('click', ()=> togglePantry(item.name));
+      chips.appendChild(chip);
+    });
+    box.appendChild(chips);
+    container.appendChild(box);
+  }
+}
+
+/* Unità diverse dello stesso ingrediente finiscono sulla stessa riga:
+   kg → g, l → ml, "spicchio" → "spicchi". */
+function normalizeUnit(qty, unit){
+  if(unit === 'kg') return {qty: qty*1000, unit:'g'};
+  if(unit === 'l') return {qty: qty*1000, unit:'ml'};
+  if(unit === 'spicchio') return {qty, unit:'spicchi'};
+  return {qty, unit};
 }
 function fmtQty(qty, unit){
+  if(unit === 'g' && qty >= 1000) return `${Math.round(qty/100)/10} kg`;
+  if(unit === 'ml' && qty >= 1000) return `${Math.round(qty/100)/10} l`;
   const rounded = Math.round(qty*10)/10;
+  if(unit === 'spicchi' && rounded === 1) return '1 spicchio';
   return `${rounded} ${unit}`;
 }
 
 function listAsText(){
   if(!currentMenu) return '';
   const aisles = buildShoppingList();
+  const pantry = new Set(loadPantry());
   let text = `La Lista — lista della spesa della settimana\n\n`;
   AISLE_ORDER.forEach(aisleName=>{
     const items = aisles[aisleName];
     if(!items) return;
+    const toBuy = Object.values(items).filter(item=>!pantry.has(item.name));
+    if(!toBuy.length) return;
     text += `${AISLE_LABEL_IT[aisleName]||aisleName}\n`;
-    Object.values(items).forEach(item=>{
+    toBuy.forEach(item=>{
       text += `- ${item.name} (${fmtQty(item.qty, item.unit)})\n`;
     });
     text += '\n';
@@ -2993,7 +3152,20 @@ document.getElementById('shareWhatsapp').addEventListener('click', ()=>{
 document.getElementById('copyList').addEventListener('click', ()=>{
   const text = listAsText();
   if(!text){ alert('Genera prima un menu.'); return; }
-  navigator.clipboard.writeText(text).then(()=> alert('Lista copiata — incollala ovunque, anche in Note.'));
+  const ok = ()=> alert('Lista copiata — incollala ovunque, anche in Note.');
+  const fallback = ()=>{
+    // browser senza accesso agli appunti: proviamo il vecchio metodo
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    let copied = false;
+    try{ copied = document.execCommand('copy'); }catch(e){}
+    ta.remove();
+    if(copied) ok();
+    else alert('Non sono riuscito a copiare la lista. Usa "Condividi su WhatsApp" o "Salva come nota".');
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, fallback);
+  else fallback();
 });
 document.getElementById('downloadNote').addEventListener('click', ()=>{
   const text = listAsText();
@@ -3008,6 +3180,7 @@ function backupData(){
     people,
     currentMenu,
     menuHistory,
+    pantry: loadPantry(),
     exportedAt: new Date().toISOString()
   }, null, 2);
 }
@@ -3036,31 +3209,56 @@ document.getElementById('shareBackup').addEventListener('click', ()=>{
   }
 });
 document.getElementById('importFile').addEventListener('change', (e)=>{
-  const file = e.target.files[0];
+  const input = e.target;
+  const file = input.files[0];
   if(!file) return;
   const reader = new FileReader();
   reader.onload = (evt)=>{
+    let data;
     try{
-      const data = JSON.parse(evt.target.result);
-      if(!Array.isArray(data.people)) throw new Error('bad format');
-      people = data.people;
-      savePeople(people);
-      if(Array.isArray(data.menuHistory)){
-        menuHistory = data.menuHistory;
-        saveMenuHistory(menuHistory);
-      }
-      if(data.currentMenu){
-        currentMenu = data.currentMenu;
-        saveMenu(currentMenu);
-      }
-      renderPeople();
-      renderMenu();
-      renderShoppingList();
-      alert(`Ripristinate ${people.length} persone e ${menuHistory.length} settimane dal backup.`);
-      switchTab('people');
+      data = JSON.parse(evt.target.result);
+      if(!data || !Array.isArray(data.people)) throw new Error('bad format');
     }catch(err){
       alert('Non è stato possibile leggere questo file di backup.');
+      input.value = '';
+      return;
     }
+    // Ripuliamo i dati: un backup di una versione vecchia non deve bloccare l'app
+    const asList = v => Array.isArray(v) ? v.map(x=>String(x).trim().toLowerCase()).filter(Boolean) : [];
+    const restoredPeople = data.people
+      .filter(p=> p && typeof p.name === 'string' && p.name.trim())
+      .map(p=>({
+        ...p,
+        name: p.name.trim(),
+        likes: asList(p.likes),
+        dislikes: asList(p.dislikes),
+        dietary: (p.dietary && typeof p.dietary === 'object') ? p.dietary : {},
+        favorites: Array.isArray(p.favorites) ? p.favorites.filter(id=>recipeById(id)) : [],
+      }));
+    const menuOk = m => isValidMenuShape(m) && m.week.every(w=> MEALS.every(meal=> !w.meals[meal] || recipeById(w.meals[meal].recipeId)));
+    const restoredHistory = Array.isArray(data.menuHistory) ? data.menuHistory.filter(menuOk) : [];
+    const skipped = (Array.isArray(data.menuHistory) ? data.menuHistory.length : 0) - restoredHistory.length;
+
+    people = restoredPeople;
+    savePeople(people);
+    menuHistory = restoredHistory;
+    saveMenuHistory(menuHistory);
+    currentMenu = menuOk(data.currentMenu) ? data.currentMenu : null;
+    saveMenu(currentMenu);
+    if(Array.isArray(data.pantry)) savePantry(data.pantry.filter(x=>typeof x === 'string'));
+    favoritesActivePerson = null;
+
+    renderPeople();
+    renderMenu();
+    renderShoppingList();
+    const plural = (n, one, many)=> `${n} ${n === 1 ? one : many}`;
+    let msg = `Ripristinate ${plural(people.length, 'persona', 'persone')} e ${plural(menuHistory.length, 'settimana', 'settimane')} dal backup.`;
+    if(skipped > 0) msg += skipped === 1
+      ? ` 1 settimana di una versione vecchia dell'app non era leggibile ed è stata saltata.`
+      : ` ${skipped} settimane di una versione vecchia dell'app non erano leggibili e sono state saltate.`;
+    alert(msg);
+    input.value = ''; // così si può ricaricare lo stesso file
+    switchTab('people');
   };
   reader.readAsText(file);
 });
@@ -3077,6 +3275,7 @@ document.getElementById('eraseAllBtn').addEventListener('click', ()=>{
   localStorage.removeItem(LS_HISTORY);
   localStorage.removeItem(LS_CHECKED);
   localStorage.removeItem(LS_MENU_HISTORY);
+  localStorage.removeItem(LS_PANTRY);
 
   people = [];
   currentMenu = null;
@@ -3096,6 +3295,11 @@ renderPeople();
 renderMenu();
 renderShoppingList();
 renderRatings();
+
+// funziona anche senza connessione (es. al supermercato senza campo)
+if('serviceWorker' in navigator && location.protocol === 'https:'){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
 </script>
 </body>
 </html>
